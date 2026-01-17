@@ -1,0 +1,832 @@
+SettlementFast React Native Mobile App - Complete Build Prompt
+Project Overview
+Build a premium React Native (Expo) mobile app for SettlementFast - a class action settlement discovery platform. The app connects to an existing production backend API and delivers a polished, App Store-ready experience with smooth animations, native feel, and excellent offline capabilities.
+
+Production API Base URL: https://settlementfast.com
+
+Supabase Configuration
+Project ID: misxfwpxaukxdklqcxfq
+Supabase URL: https://misxfwpxaukxdklqcxfq.supabase.co
+
+Environment Variables:
+
+EXPO_PUBLIC_SUPABASE_URL = https://misxfwpxaukxdklqcxfq.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY = (obtain from Supabase dashboard)
+EXPO_PUBLIC_API_URL = https://settlementfast.com
+Authentication
+Use Supabase Auth with the same methods as the web app:
+
+Email/password login
+Magic link (passwordless email)
+Token Flow:
+
+Authenticate via Supabase Auth SDK (@supabase/supabase-js)
+Store tokens securely using expo-secure-store
+Include JWT token in Authorization: Bearer <token> header for all API calls
+Handle token refresh automatically via Supabase client
+Implement automatic session persistence across app restarts
+Biometric Authentication:
+
+Implement Face ID / Touch ID using expo-local-authentication
+Allow users to enable biometric unlock after initial login
+Store encrypted session indicator in secure storage
+Auto-prompt for biometric on app resume (configurable)
+Fallback to passcode if biometric fails
+Core Features
+1. User Authentication
+Sign up with email/password (with real-time validation)
+Login with email/password or magic link
+Biometric authentication (Face ID / Touch ID) for quick unlock
+Logout with secure token cleanup and push token removal
+Password reset flow with in-app deep linking
+"Remember me" persistent session option
+Account deletion request
+2. Browse Settlements
+List all open settlements with search and filters
+Filter by category, status, payout range, proof required
+Sort by deadline, payout, newest, relevance
+Pull-to-refresh with haptic feedback
+Infinite scroll pagination with smooth loading
+Search with debounce and recent searches
+Filter chips with animated selection states
+Empty state with illustration when no results
+3. Settlement Details
+Full settlement information display with parallax header
+Hero image/logo with gradient overlay
+Eligibility requirements in expandable accordion
+Claim deadlines with animated countdown timers
+Payout range displayed prominently
+Link to official claim form (open in-app browser with share)
+Save/track settlement with haptic confirmation
+Share settlement via native share sheet
+"Similar settlements" recommendations
+4. Eligibility Checker
+Step-by-step eligibility questions with progress bar
+Smooth page transitions between questions
+Animated progress indicator
+Instant eligibility result (LIKELY, POSSIBLE, UNLIKELY) with celebration/result animation
+Save eligibility answers with claim
+Option to retake eligibility quiz
+Confetti animation for "LIKELY" result
+5. My Claims (Claims Tracker)
+View all tracked settlements with status grouping
+Claim statuses: NOT_FILED, FILED_PENDING, PAID, REJECTED, UNKNOWN
+Status badges with color coding and icons
+Add/edit confirmation numbers with inline editing
+Add notes to claims (expandable text area)
+Document scanner using camera (store confirmation documents)
+Swipe-to-delete with undo toast
+Long-press for quick actions menu
+Sort by deadline, status, payout
+Filter by status
+6. User Profile & Settings
+Edit profile information with avatar support
+Email notification preferences (toggle switches)
+Push notification preferences
+Dark mode toggle (persistent, system-aware)
+Biometric authentication toggle
+App lock timeout settings
+Referral code display with one-tap copy and share
+Account details and subscription status
+Legal pages (Privacy, Terms, About)
+App version and changelog
+Rate app prompt (after positive interaction)
+Contact support
+7. Push Notifications
+Deadline reminders (configurable: 1 week, 3 days, 1 day, 1 hour before)
+New settlement alerts for preferred categories
+Claim status updates
+Payment received notifications
+Weekly digest option
+Expo Push Notifications with backend token registration
+Rich notifications with images on iOS
+Notification center in-app for history
+Badge count management
+8. Offline Mode
+Cache settlements list for offline viewing
+Cache user claims and profile
+Queue claim updates when offline
+Sync when connection restored with conflict resolution
+Display offline indicator banner
+Optimistic UI updates
+Background sync when app becomes active
+Clear cache option in settings
+9. Dashboard (Home)
+Welcome message with user's first name
+Summary statistics cards (total claims, pending, paid amounts)
+Animated number counting on load
+Upcoming deadlines section with urgency indicators
+Personalized recommendations carousel
+Quick action buttons (Browse, My Claims, Profile)
+Recent activity feed
+"New settlements" badge for unviewed items
+10. Onboarding Experience
+Animated walkthrough screens (3-4 slides)
+Category preference selection
+Brand preference selection (searchable)
+Notification permission request
+Skip option available
+Progress dots indicator
+Lottie animations for each slide
+11. Subscription & Payments
+View current subscription plan
+Subscription plan comparison
+Upgrade/downgrade plans
+Billing portal access
+PAYG credits display and purchase
+Saved payment methods management
+Purchase history
+Claims remaining indicator
+API Specification (Complete)
+Security
+All authenticated endpoints require:
+
+Authorization: Bearer <supabase_jwt_token>
+TypeScript Schemas
+// Settlement
+interface Settlement {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  brands: string[];
+  country: string;
+  shortDescription: string;
+  fullDescription?: string;
+  dateRangeStart?: string;
+  dateRangeEnd?: string;
+  claimDeadline?: string;
+  payoutMinEstimate?: string;
+  payoutMaxEstimate?: string;
+  proofRequired: boolean;
+  claimWebsiteUrl?: string;
+  claimFormUrl?: string;
+  source?: string;
+  sourceUrl?: string;
+  logoUrl?: string;
+  status: 'OPEN' | 'EXPIRING' | 'CLOSED' | 'PAYING' | 'ARCHIVED';
+  keyRequirements: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+// User
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  isAdmin: boolean;
+  isLawyer: boolean;
+  referralCode?: string;
+  hasCompletedOnboarding: boolean;
+  freeClaimsUsed: number;
+  accountStatus: 'active' | 'suspended' | 'banned';
+}
+// UserSettlement (Claim)
+interface UserSettlement {
+  id: string;
+  userId: string;
+  settlementId: string;
+  eligibilityResult?: 'LIKELY' | 'POSSIBLE' | 'UNLIKELY';
+  eligibilityAnswers?: Record<string, any>;
+  status: 'NOT_FILED' | 'FILED_PENDING' | 'PAID' | 'REJECTED' | 'UNKNOWN';
+  claimConfirmationNumber?: string;
+  filedAt?: string;
+  payoutAmount?: string;
+  payoutReceivedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  settlement?: Settlement;
+}
+// Notification
+interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  settlementId?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+// EligibilityQuestion
+interface EligibilityQuestion {
+  id: string;
+  settlementId: string;
+  questionText: string;
+  questionType: 'YES_NO' | 'MULTIPLE_CHOICE';
+  options: string[];
+  weight: number;
+  orderIndex: number;
+}
+// DashboardStats
+interface DashboardStats {
+  totalClaims: number;
+  activeClaims: number;
+  totalEstimatedPayout: number;
+  totalReceived: number;
+  upcomingDeadlines: number;
+}
+// UserProfile
+interface UserProfile {
+  id: string;
+  userId: string;
+  preferredCategories: string[];
+  preferredBrands: string[];
+  emailDeadlineReminders: boolean;
+  emailNewSettlements: boolean;
+  emailClaimUpdates: boolean;
+  emailWeeklyDigest: boolean;
+}
+// SubscriptionPlan
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  displayName: string;
+  description?: string;
+  tierType: 'free' | 'pro' | 'premium' | 'law_firm';
+  priceMonthly: string;
+  priceYearly?: string;
+  includedClaims?: number;
+  isUnlimited: boolean;
+  features: { text: string; type: 'perk' | 'disclaimer'; tooltip?: string }[];
+  highlightBadge?: string;
+}
+// UserSubscription
+interface UserSubscription {
+  id: string;
+  userId: string;
+  planId: string;
+  plan?: SubscriptionPlan;
+  status: 'active' | 'canceled' | 'past_due' | 'trialing';
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd: boolean;
+}
+// PaygStats
+interface PaygStats {
+  availableCredits: number;
+  totalPurchased: number;
+  totalUsed: number;
+  canSubmitClaim: boolean;
+  claimsRemaining: number;
+  isSubscribed: boolean;
+  subscriptionClaimsUsed: number;
+  subscriptionClaimsLimit: number;
+}
+// PaymentMethod
+interface PaymentMethod {
+  id: string;
+  cardBrand: string;
+  cardLast4: string;
+  cardExpMonth: number;
+  cardExpYear: number;
+  isDefault: boolean;
+}
+// PushToken (for mobile push notifications)
+interface PushToken {
+  id: string;
+  userId: string;
+  token: string;
+  platform: 'ios' | 'android' | 'web';
+  deviceId?: string;
+  deviceName?: string;
+  isActive: boolean;
+  lastUsedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+API Endpoints
+Authentication
+Method	Endpoint	Description	Auth
+GET	/api/auth/user	Get current authenticated user	Yes
+Settlements
+Method	Endpoint	Description	Auth
+GET	/api/settlements	List settlements (?search, ?category, ?status, ?minPayout, ?maxPayout, ?proofRequired, ?limit, ?offset)	No
+GET	/api/settlements/recommended	Get personalized recommendations	Yes
+GET	/api/settlements/upcoming-deadlines	Get settlements expiring soon (?days=7)	No
+GET	/api/settlements/{slug}	Get settlement by slug	No
+GET	/api/settlements/{slug}/questions	Get eligibility questions	No
+GET	/api/explore/brands	List all brands	No
+GET	/api/explore/categories	List all categories	No
+User Claims
+Method	Endpoint	Description	Auth
+GET	/api/user-settlements	Get user's tracked claims	Yes
+POST	/api/user-settlements	Track a new claim	Yes
+GET	/api/user-settlements/stats	Get claim statistics	Yes
+GET	/api/user-settlements/by-settlement/{settlementId}	Get user's claim for specific settlement	Yes
+PATCH	/api/user-settlements/{id}	Update a claim	Yes
+DELETE	/api/user-settlements/{id}	Delete a claim	Yes
+Notifications
+Method	Endpoint	Description	Auth
+GET	/api/notifications	Get user notifications	Yes
+PATCH	/api/notifications/{id}/read	Mark notification as read	Yes
+POST	/api/notifications/mark-all-read	Mark all as read	Yes
+Push Tokens (Mobile Push Notifications)
+Method	Endpoint	Description	Auth
+GET	/api/push-tokens	Get all push tokens for current user	Yes
+POST	/api/push-tokens	Register/update a push token (upserts by token)	Yes
+DELETE	/api/push-tokens	Remove a specific push token (ownership verified)	Yes
+DELETE	/api/push-tokens/all	Remove all tokens for user (logout all devices)	Yes
+Push Token Request/Response:
+
+// POST /api/push-tokens - Register token
+// Request:
+{
+  token: string;                              // Expo push token (required)
+  platform: 'ios' | 'android' | 'web';        // Required
+  deviceId?: string;                          // Optional device identifier
+  deviceName?: string;                        // Optional e.g., "iPhone 15 Pro"
+}
+// Response: PushToken object
+// DELETE /api/push-tokens - Remove specific token
+// Request: { token: string }
+// Response: 204 No Content
+// DELETE /api/push-tokens/all
+// Response: 204 No Content
+User Profile
+Method	Endpoint	Description	Auth
+GET	/api/user/profile	Get user profile	Yes
+PATCH	/api/user/profile	Update user profile	Yes
+POST	/api/user/onboarding	Complete onboarding	Yes
+POST	/api/user/onboarding/skip	Skip onboarding	Yes
+GET	/api/email-preferences	Get email preferences	Yes
+PATCH	/api/email-preferences	Update email preferences	Yes
+Dashboard & Analytics
+Method	Endpoint	Description	Auth
+GET	/api/dashboard/stats	Get dashboard statistics	Yes
+GET	/api/analytics/user	Get user analytics	Yes
+Referrals
+Method	Endpoint	Description	Auth
+GET	/api/referrals/stats	Get referral statistics	Yes
+GET	/api/referrals/validate/{code}	Validate referral code	No
+POST	/api/referrals/apply	Apply referral code	Yes
+Subscriptions
+Method	Endpoint	Description	Auth
+GET	/api/subscription-plans	Get all available plans	No
+GET	/api/subscription	Get user's current subscription	Yes
+GET	/api/subscription/usage	Get usage for current period	Yes
+POST	/api/subscription/checkout	Create Stripe checkout session	Yes
+POST	/api/subscription/portal	Get Stripe customer portal URL	Yes
+POST	/api/subscription/cancel	Cancel subscription	Yes
+POST	/api/subscription/reactivate	Reactivate canceled subscription	Yes
+POST	/api/subscription/billing-portal	Get billing portal URL	Yes
+Payments (PAYG)
+Method	Endpoint	Description	Auth
+GET	/api/payg/settings	Get PAYG pricing	No
+GET	/api/payg/stats	Get user PAYG statistics	Yes
+GET	/api/payg/can-submit	Check if user can submit a claim	Yes
+GET	/api/payg/payment-methods	Get saved payment methods	Yes
+POST	/api/payg/setup-intent	Create Stripe setup intent	Yes
+POST	/api/payg/payment-methods	Save a payment method	Yes
+DELETE	/api/payg/payment-methods/{id}	Delete payment method	Yes
+POST	/api/payg/payment-methods/{id}/default	Set default payment method	Yes
+GET	/api/payg/purchases	Get purchase history	Yes
+POST	/api/payg/purchase	Purchase claim credits	Yes
+Legal Pages
+Method	Endpoint	Description	Auth
+GET	/api/legal/{pageType}	Get legal page content (privacy, terms, about)	No
+Technical Stack
+Required Dependencies
+{
+  "expo": "~52.0.0",
+  "@supabase/supabase-js": "^2.x",
+  "@tanstack/react-query": "^5.x",
+  "@react-navigation/native": "^7.x",
+  "@react-navigation/native-stack": "^7.x",
+  "@react-navigation/bottom-tabs": "^7.x",
+  "expo-secure-store": "~14.x",
+  "expo-local-authentication": "~15.x",
+  "expo-notifications": "~0.29.x",
+  "expo-camera": "~16.x",
+  "expo-image-picker": "~16.x",
+  "expo-web-browser": "~14.x",
+  "expo-linking": "~7.x",
+  "expo-haptics": "~14.x",
+  "expo-clipboard": "~7.x",
+  "expo-sharing": "~13.x",
+  "expo-blur": "~14.x",
+  "expo-linear-gradient": "~14.x",
+  "expo-font": "~13.x",
+  "@expo-google-fonts/inter": "^0.2.x",
+  "nativewind": "^4.x",
+  "react-native-reanimated": "~3.16.x",
+  "react-native-gesture-handler": "~2.20.x",
+  "react-native-safe-area-context": "^4.x",
+  "react-native-screens": "~4.x",
+  "react-native-svg": "^15.x",
+  "lottie-react-native": "^7.x",
+  "zustand": "^5.x",
+  "date-fns": "^4.x",
+  "date-fns-tz": "^3.x",
+  "@react-native-async-storage/async-storage": "^2.x",
+  "@gorhom/bottom-sheet": "^5.x",
+  "react-native-toast-message": "^2.x",
+  "react-native-skeleton-placeholder": "^5.x",
+  "@shopify/flash-list": "^1.x",
+  "react-native-mmkv": "^3.x"
+}
+State Management
+React Query for server state (API data fetching/caching)
+Zustand for local state (auth, preferences, offline queue)
+MMKV for high-performance persistent storage (faster than AsyncStorage)
+SecureStore for sensitive data (auth tokens, biometric keys)
+Design System
+Design Philosophy
+Fintech/legal tech aesthetic inspired by Stripe, Linear, Notion
+Trustworthy professionalism
+Information clarity over visual flair
+Scannable content with strong hierarchy
+Native feel with smooth 60fps animations
+Typography
+Font: Inter (via @expo-google-fonts/inter)
+
+Headings: 700 weight
+Body: 400 weight
+Labels: 500 weight
+Font Scale (Mobile Optimized)
+
+Hero/Titles: 28px (700)
+Section Headers: 22px (700)
+Card Titles: 18px (600)
+Body: 16px (400)
+Secondary: 14px (400)
+Caption/Meta: 12px (500)
+Colors (RGB for React Native)
+// Light Mode
+const lightColors = {
+  background: '#FFFFFF',
+  foreground: '#0F172A',
+  card: '#FFFFFF',
+  cardForeground: '#0F172A',
+  primary: '#2563EB',
+  primaryForeground: '#F8FAFC',
+  secondary: '#F1F5F9',
+  secondaryForeground: '#0F172A',
+  muted: '#F1F5F9',
+  mutedForeground: '#64748B',
+  accent: '#F1F5F9',
+  accentForeground: '#0F172A',
+  destructive: '#EF4444',
+  destructiveForeground: '#FFFFFF',
+  border: '#E2E8F0',
+  success: '#22C55E',
+  warning: '#F59E0B',
+};
+// Dark Mode
+const darkColors = {
+  background: '#0F172A',
+  foreground: '#F8FAFC',
+  card: '#1E293B',
+  cardForeground: '#F8FAFC',
+  primary: '#3B82F6',
+  primaryForeground: '#0F172A',
+  secondary: '#1E293B',
+  secondaryForeground: '#F8FAFC',
+  muted: '#1E293B',
+  mutedForeground: '#94A3B8',
+  accent: '#1E293B',
+  accentForeground: '#F8FAFC',
+  destructive: '#DC2626',
+  destructiveForeground: '#FFFFFF',
+  border: '#334155',
+  success: '#16A34A',
+  warning: '#D97706',
+};
+Spacing Scale
+xs: 4
+sm: 8
+md: 12
+lg: 16
+xl: 24
+2xl: 32
+3xl: 48
+Component Patterns
+Cards:
+
+Border radius: 16px
+Padding: 16px
+Subtle shadow on light mode
+Border on dark mode
+Buttons:
+
+Border radius: 12px
+Min height: 48px (touch target)
+Horizontal padding: 24px
+Active state: scale(0.98) with haptic
+Status Badges:
+
+Border radius: 9999px (pill)
+Padding: 4px 12px
+Font size: 12px
+Font weight: 600
+Inputs:
+
+Border radius: 12px
+Height: 48px
+Padding: 16px
+Focus: primary border color
+Mobile-Specific Patterns
+Navigation:
+
+Bottom tab bar with 4 tabs (Home, Explore, Claims, Profile)
+Tab icons: 24px with labels
+Active tab: Primary color
+Inactive tab: Muted color
+Safe area aware
+Lists:
+
+FlashList for performance (not FlatList)
+Card-style items with 12px gap
+Skeleton loading (3 placeholder cards)
+Pull-to-refresh with custom indicator
+Infinite scroll with loading footer
+Modals:
+
+Bottom sheet style (@gorhom/bottom-sheet)
+Drag to dismiss
+Backdrop blur
+Handle indicator at top
+Transitions:
+
+Screen transitions: Shared element where appropriate
+List items: Fade + slide up on load
+Buttons: Scale on press (0.98)
+Cards: Subtle lift on press
+Haptics:
+
+Light impact on button press
+Medium impact on successful action
+Selection feedback on toggles
+Notification feedback on errors
+App Structure (Expo Router)
+/app
+  _layout.tsx           # Root layout with providers
+  +not-found.tsx        # 404 page
+  
+  /(tabs)
+    _layout.tsx         # Tab navigator
+    index.tsx           # Home/Dashboard
+    explore.tsx         # Browse Settlements
+    claims.tsx          # My Claims
+    profile.tsx         # User Profile
+    
+  /(auth)
+    _layout.tsx         # Auth layout (no tabs)
+    login.tsx
+    signup.tsx
+    forgot-password.tsx
+    verify-email.tsx
+    
+  /settlement
+    [slug].tsx          # Settlement details
+    
+  /eligibility
+    [slug].tsx          # Eligibility checker
+    
+  /notifications.tsx
+  
+  /settings
+    _layout.tsx
+    index.tsx           # Settings menu
+    notifications.tsx
+    security.tsx
+    preferences.tsx
+    subscription.tsx
+    payment-methods.tsx
+    about.tsx
+    
+  /onboarding
+    _layout.tsx
+    index.tsx           # Onboarding slides
+    categories.tsx      # Category selection
+    brands.tsx          # Brand selection
+/components
+  /ui
+    Button.tsx
+    Card.tsx
+    Input.tsx
+    Badge.tsx
+    Avatar.tsx
+    Skeleton.tsx
+    BottomSheet.tsx
+    Toast.tsx
+    ProgressBar.tsx
+    Countdown.tsx
+    EmptyState.tsx
+  /settlements
+    SettlementCard.tsx
+    SettlementList.tsx
+    SettlementHeader.tsx
+    FilterBar.tsx
+    SearchInput.tsx
+  /claims
+    ClaimCard.tsx
+    ClaimList.tsx
+    StatusBadge.tsx
+    ClaimActions.tsx
+  /auth
+    LoginForm.tsx
+    SignupForm.tsx
+    BiometricPrompt.tsx
+  /dashboard
+    StatsCard.tsx
+    DeadlineList.tsx
+    RecommendationCarousel.tsx
+  /eligibility
+    QuestionCard.tsx
+    ProgressIndicator.tsx
+    ResultCard.tsx
+  /common
+    Header.tsx
+    TabBar.tsx
+    OfflineBanner.tsx
+    LoadingScreen.tsx
+    ErrorBoundary.tsx
+/hooks
+  useAuth.ts
+  useSettlements.ts
+  useClaims.ts
+  useNotifications.ts
+  usePushTokens.ts
+  useOffline.ts
+  useSubscription.ts
+  usePayg.ts
+  useBiometric.ts
+  useColorScheme.ts
+  useHaptics.ts
+/lib
+  supabase.ts
+  api.ts
+  storage.ts
+  notifications.ts
+  pushTokens.ts
+  queryClient.ts
+  constants.ts
+/stores
+  authStore.ts
+  preferencesStore.ts
+  offlineStore.ts
+/utils
+  formatters.ts
+  validators.ts
+  dates.ts
+/assets
+  /images
+  /animations (Lottie files)
+  /icons
+Settlement Categories
+const SETTLEMENT_CATEGORIES = [
+  'Tech & Apps',
+  'Banks & Credit Cards',
+  'Food & Beverage',
+  'Retail',
+  'Auto',
+  'Healthcare',
+  'Data Breaches',
+  'Privacy',
+  'False Advertising',
+  'Employment',
+  'Consumer Products',
+] as const;
+Animations & Micro-interactions
+Lottie Animations
+Onboarding slides: Custom illustrations for each step
+Empty states: Friendly animations (no claims, no results)
+Success states: Checkmark/confetti for completed actions
+Loading states: Subtle pulsing or dots animation
+Pull-to-refresh: Custom branded animation
+Reanimated Animations
+List items: Stagger fade-in on load
+Cards: Scale on press (withSpring)
+Modals: Slide up with backdrop fade
+Tab bar: Icon bounce on selection
+Progress bars: Smooth width transitions
+Countdown timers: Number tick animation
+Gesture Animations
+Swipe to delete: Reveal red background with trash icon
+Pull to refresh: Overscroll with spring physics
+Bottom sheet: Drag to expand/collapse
+Image zoom: Pinch to zoom on receipts/documents
+Accessibility (A11y)
+VoiceOver (iOS) and TalkBack (Android) full support
+Semantic labels on all interactive elements
+Dynamic font size support (respect system settings)
+Minimum touch targets: 44x44 points
+Color contrast: WCAG AA compliant
+Reduce motion: Respect system preference
+Screen reader announcements for state changes
+Performance Optimizations
+FlashList instead of FlatList for long lists
+MMKV for faster storage (10x faster than AsyncStorage)
+Image caching with expo-image
+Lazy loading for non-critical screens
+Memoization of expensive components
+Skeleton screens instead of spinners
+Prefetching next likely screens
+Bundle splitting for faster cold starts
+Deep Linking
+Configure deep links for:
+
+settlementfast://settlement/{slug} - Open settlement detail
+settlementfast://claim/{id} - Open claim detail
+settlementfast://notifications - Open notifications
+settlementfast://reset-password?token={token} - Password reset
+settlementfast://verify-email?token={token} - Email verification
+Push Notifications
+Registration (Backend Ready)
+Request permission on first launch (after onboarding)
+Get Expo push token using expo-notifications
+Register token: POST /api/push-tokens with { token, platform, deviceId?, deviceName? }
+Handle token refresh - call POST again (upserts by token)
+On logout: DELETE /api/push-tokens/all to unregister all devices
+Token Management
+Tokens are unique - re-registering same token updates existing record
+Last used timestamp updated on each registration
+Inactive tokens can be deactivated for cleanup
+Ownership verification on deletion for security
+Notification Types
+Type	Action
+deadline_reminder	Navigate to settlement
+new_settlement	Navigate to settlement
+claim_update	Navigate to claim
+payment_received	Navigate to claim with celebration
+weekly_digest	Navigate to explore
+Rich Notifications (iOS)
+Include settlement image thumbnail
+Action buttons: "View" / "Dismiss"
+Offline Mode
+Cache Strategy:
+Settlements list: Cache first, then network
+User claims: Network first, fallback to cache
+User profile: Persist indefinitely, sync on change
+Offline Queue:
+Queue all mutations (create/update/delete claims)
+Store with timestamp and retry count
+Process FIFO when online
+Sync:
+Automatic sync when connection restored
+Manual sync option in settings
+Conflict resolution: Server wins, show toast
+UI Indicators:
+Persistent offline banner at top
+Queued actions indicator badge
+"Last synced" timestamp in settings
+Security
+Token Storage: SecureStore with biometric protection
+Certificate Pinning: Pin to production SSL cert
+Jailbreak/Root Detection: Warn users (don't block)
+Screenshot Prevention: Disable for sensitive screens (payments)
+Session Timeout: Configurable (5, 15, 30 min, never)
+Biometric: Required for payment actions
+App Store Preparation
+App Icon
+1024x1024 PNG without alpha
+Clean, recognizable design
+Works at small sizes
+Splash Screen
+Logo centered
+Primary brand color background
+Fade transition to app
+Screenshots (Required)
+Dashboard with stats
+Browse settlements with filters
+Settlement detail page
+Eligibility checker
+Claims tracker
+Dark mode variant
+App Store Listing
+Name: SettlementFast - Claim Money
+Subtitle: Find & Track Class Action Settlements
+Keywords: class action, settlement, refund, money, lawsuit, claim
+Category: Finance (primary), Utilities (secondary)
+Required Links
+Privacy Policy: https://settlementfast.com/privacy
+Terms of Service: https://settlementfast.com/terms
+Support URL: https://settlementfast.com/support
+Important Implementation Notes
+Never hardcode API URLs - Use environment variables
+Handle 401 responses - Clear auth, redirect to login, show toast
+Handle 409 responses - Claim limit reached modal with upgrade CTA
+All dates in Eastern Time - Use date-fns-tz with America/New_York
+Legal disclaimer - Display on every settlement: "This app does not provide legal advice"
+Rate limiting - Implement exponential backoff on 429
+Error boundaries - Catch and report crashes gracefully
+Analytics events - Track key user actions for optimization
+Testing Checklist
+ All auth flows work (signup, login, magic link, password reset)
+ Biometric authentication works on iOS and Android
+ Push token registration works on app launch
+ Push token cleanup on logout
+ Offline mode queues and syncs correctly
+ Push notifications arrive and navigate correctly
+ Deep links open correct screens
+ Dark mode looks correct on all screens
+ Accessibility: VoiceOver/TalkBack navigation works
+ Performance: No jank on 60fps animations
+ Camera/document scanner captures clearly
+ All API endpoints return expected data
+ Error states display correctly
+ Loading states show skeletons
+ Empty states show helpful content
