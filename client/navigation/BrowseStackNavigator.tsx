@@ -1,25 +1,25 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import ProfileScreen from "@/screens/ProfileScreen";
+import BrowseScreen from "@/screens/BrowseScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
-export type ProfileStackParamList = {
-  Profile: undefined;
+export type BrowseStackParamList = {
+  Browse: undefined;
 };
 
-const Stack = createNativeStackNavigator<ProfileStackParamList>();
+const Stack = createNativeStackNavigator<BrowseStackParamList>();
 
-export default function ProfileStackNavigator() {
+export default function BrowseStackNavigator() {
   const screenOptions = useScreenOptions();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="Browse"
+        component={BrowseScreen}
         options={{
-          headerTitle: "Profile",
+          headerTitle: "Browse Settlements",
         }}
       />
     </Stack.Navigator>
