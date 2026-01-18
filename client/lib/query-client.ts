@@ -7,13 +7,30 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 export function getApiUrl(): string {
   let host = process.env.EXPO_PUBLIC_DOMAIN;
 
+  // Fallback for local development or when env var is not set
   if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+    // Check if we're on web and can detect the current origin
+    if (typeof window !== "undefined" && window.location) {
+      // Use port 5000 for the backend
+      const { protocol, hostname } = window.location;
+      return `${protocol}//${hostname}:5000`;
+    }
+    // For native, try localhost
+    return "http://localhost:5000";
   }
 
-  let url = new URL(`https://${host}`);
+  // Remove port if it's already included, we want to use port 5000
+  const hostWithoutPort = host.replace(/:5000$/, "").replace(/:8081$/, "");
+  
+  // Use HTTPS for production domains
+  const protocol = hostWithoutPort.includes("localhost") ? "http" : "https";
+  
+  // Always point to port 5000 for the backend
+  const url = hostWithoutPort.includes("localhost") 
+    ? `${protocol}://${hostWithoutPort}:5000`
+    : `${protocol}://${hostWithoutPort}`;
 
-  return url.href;
+  return url;
 }
 
 async function throwIfResNotOk(res: Response) {
