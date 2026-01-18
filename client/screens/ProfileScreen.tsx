@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, View, Pressable, Image, Alert, Switch, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, View, Pressable, Image, Alert, Switch, ScrollView, Linking, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
+import * as WebBrowser from "expo-web-browser";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -85,6 +86,7 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const { user, profile, isAuthenticated, signOut } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const handleSignIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -115,6 +117,56 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const handleEditProfile = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("EditProfile");
+  };
+
+  const handleNotifications = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("NotificationSettings");
+  };
+
+  const handleEmailPreferences = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("EmailPreferences");
+  };
+
+  const handlePreferredCategories = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("PreferredCategories");
+  };
+
+  const handlePreferredBrands = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("PreferredBrands");
+  };
+
+  const handleHelpCenter = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await WebBrowser.openBrowserAsync("https://settlementfast.com/help");
+  };
+
+  const handleContactSupport = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const email = "support@settlementfast.com";
+    const subject = "Support Request";
+    const mailUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+    Linking.openURL(mailUrl).catch(() => {
+      Alert.alert("Contact Support", "Email us at support@settlementfast.com");
+    });
+  };
+
+  const handlePrivacyPolicy = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await WebBrowser.openBrowserAsync("https://settlementfast.com/privacy");
+  };
+
+  const handleTermsOfService = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await WebBrowser.openBrowserAsync("https://settlementfast.com/terms");
   };
 
   if (!isAuthenticated) {
@@ -196,19 +248,19 @@ export default function ProfileScreen() {
           <SettingsItem
             icon="user"
             label="Edit Profile"
-            onPress={() => {}}
+            onPress={handleEditProfile}
           />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsItem
             icon="bell"
             label="Notifications"
-            onPress={() => {}}
+            onPress={handleNotifications}
           />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsItem
             icon="mail"
             label="Email Preferences"
-            onPress={() => {}}
+            onPress={handleEmailPreferences}
           />
         </View>
       </View>
@@ -221,13 +273,13 @@ export default function ProfileScreen() {
           <SettingsItem
             icon="tag"
             label="Preferred Categories"
-            onPress={() => {}}
+            onPress={handlePreferredCategories}
           />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsItem
             icon="shopping-bag"
             label="Preferred Brands"
-            onPress={() => {}}
+            onPress={handlePreferredBrands}
           />
         </View>
       </View>
@@ -240,25 +292,25 @@ export default function ProfileScreen() {
           <SettingsItem
             icon="help-circle"
             label="Help Center"
-            onPress={() => {}}
+            onPress={handleHelpCenter}
           />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsItem
             icon="message-circle"
             label="Contact Support"
-            onPress={() => {}}
+            onPress={handleContactSupport}
           />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsItem
             icon="file-text"
             label="Privacy Policy"
-            onPress={() => {}}
+            onPress={handlePrivacyPolicy}
           />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsItem
             icon="file"
             label="Terms of Service"
-            onPress={() => {}}
+            onPress={handleTermsOfService}
           />
         </View>
       </View>

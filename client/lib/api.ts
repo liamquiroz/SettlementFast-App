@@ -5,7 +5,28 @@ import { getApiUrl } from "./query-client";
 // Use local proxy in development to bypass CORS, direct API in production
 const API_BASE_URL = getApiUrl();
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
+// Endpoints that require authentication (user-specific data)
+const AUTH_REQUIRED_ENDPOINTS = [
+  "/api/user-settlements",
+  "/api/user/profile",
+  "/api/email-preferences",
+  "/api/dashboard/stats",
+];
+
+function requiresAuth(endpoint: string): boolean {
+  return AUTH_REQUIRED_ENDPOINTS.some(authEndpoint => 
+    endpoint.startsWith(authEndpoint)
+  );
+}
+
+async function getAuthHeaders(endpoint: string): Promise<Record<string, string>> {
+  // Only add auth headers for endpoints that require authentication
+  if (!requiresAuth(endpoint)) {
+    return {
+      "Content-Type": "application/json",
+    };
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.access_token) {
     return {
@@ -22,7 +43,7 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const headers = await getAuthHeaders();
+  const headers = await getAuthHeaders(endpoint);
   
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
