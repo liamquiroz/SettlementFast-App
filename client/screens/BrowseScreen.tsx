@@ -39,7 +39,11 @@ export default function BrowseScreen() {
     try {
       const apiCategories = await exploreApi.getCategories();
       if (apiCategories.length > 0) {
-        setCategories(["All", ...apiCategories]);
+        // API returns {name, count} objects, extract just the names
+        const categoryNames = apiCategories.map((cat: { name: string; count: number } | string) => 
+          typeof cat === 'string' ? cat : cat.name
+        );
+        setCategories(["All", ...categoryNames]);
       }
     } catch (error) {
       console.log("Using default categories");

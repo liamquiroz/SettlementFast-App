@@ -1,6 +1,9 @@
 import { supabase } from "./supabase";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://settlementfast.com";
+import { getApiUrl } from "./query-client";
+
+// Use local proxy in development to bypass CORS, direct API in production
+const API_BASE_URL = getApiUrl();
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -198,7 +201,12 @@ export const userApi = {
   updateEmailPreferences: (data: Partial<UserProfile>) => api.patch<UserProfile>("/api/email-preferences", data),
 };
 
+export interface CategoryWithCount {
+  name: string;
+  count: number;
+}
+
 export const exploreApi = {
   getBrands: () => api.get<string[]>("/api/explore/brands"),
-  getCategories: () => api.get<string[]>("/api/explore/categories"),
+  getCategories: () => api.get<CategoryWithCount[]>("/api/explore/categories"),
 };
