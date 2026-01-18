@@ -1,0 +1,161 @@
+🔐 Authentication
+Method: Supabase JWT-based authentication
+
+Header format:
+
+Authorization: Bearer <supabase_access_token>
+Supabase Project URL: https://misxfwpxaukxdklqcxfq.supabase.co
+
+Supabase Anon Key: Starts with eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (the full key is in VITE_SUPABASE_ANON_KEY secret)
+
+🌐 CORS Configuration
+The backend allows requests from these origins:
+
+https://settlementfast.com
+https://www.settlementfast.com
+capacitor://localhost ✅ (already configured for mobile apps)
+http://localhost
+http://localhost:5000
+Allowed Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+Allowed Headers: Content-Type, Authorization
+Credentials: Enabled
+
+📡 Main API Endpoints
+Public Endpoints (No Auth Required)
+Method	Endpoint	Description
+GET	/api/settlements	List all settlements (supports pagination/filters)
+GET	/api/settlements/:slug	Get single settlement by slug
+GET	/api/settlements/:slug/questions	Get eligibility questions
+GET	/api/settlements/upcoming-deadlines	Get settlements with upcoming deadlines
+GET	/api/explore/brands	List all brands
+GET	/api/explore/categories	List all categories
+GET	/api/subscription-plans	Get available subscription plans
+GET	/api/referrals/validate/:code	Validate a referral code
+GET	/api/payg/settings	Get pay-as-you-go pricing settings
+Authenticated Endpoints (Bearer Token Required)
+Method	Endpoint	Description
+GET	/api/auth/user	Get current authenticated user
+GET	/api/dashboard/stats	Get user's dashboard statistics
+GET	/api/settlements/recommended	Get personalized settlement recommendations
+GET	/api/user-settlements	Get user's saved claims
+GET	/api/user-settlements/stats	Get user's claim statistics
+GET	/api/user-settlements/by-settlement/:settlementId	Get specific claim
+POST	/api/user-settlements	Create/save a new claim
+PATCH	/api/user-settlements/:id	Update a claim
+DELETE	/api/user-settlements/:id	Delete a claim
+GET	/api/notifications	Get user's notifications
+PATCH	/api/notifications/:id/read	Mark notification as read
+POST	/api/notifications/mark-all-read	Mark all notifications as read
+GET	/api/user/profile	Get user profile
+PATCH	/api/user/profile	Update user profile
+POST	/api/user/onboarding	Complete onboarding
+POST	/api/user/onboarding/skip	Skip onboarding
+GET	/api/referrals/stats	Get referral statistics
+POST	/api/referrals/apply	Apply a referral code
+GET	/api/email-preferences	Get email preferences
+PATCH	/api/email-preferences	Update email preferences
+GET	/api/subscription	Get user's subscription
+GET	/api/subscription/usage	Get subscription usage stats
+POST	/api/subscription/checkout	Create Stripe checkout session
+POST	/api/subscription/portal	Get Stripe customer portal URL
+POST	/api/subscription/cancel	Cancel subscription
+POST	/api/subscription/reactivate	Reactivate canceled subscription
+Push Notifications (Mobile-specific)
+Method	Endpoint	Description
+GET	/api/push-tokens	Get user's registered push tokens
+POST	/api/push-tokens	Register a push token
+DELETE	/api/push-tokens	Delete a specific push token
+DELETE	/api/push-tokens/all	Delete all user's push tokens
+POST body for registering token:
+
+{
+  "token": "ExponentPushToken[xxx]",
+  "platform": "ios" | "android",
+  "deviceName": "iPhone 15 Pro"
+}
+📊 Data Objects
+User Object
+{
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+  isAdmin: boolean;
+  hasCompletedOnboarding: boolean;
+  referralCode: string | null;
+  referredBy: string | null;
+  isLawyer: boolean;
+  lawyerVerificationStatus: 'pending' | 'verified' | 'rejected' | null;
+  freeClaimsUsed: number;
+  stripeCustomerId: string | null;
+  supabaseUserId: string;
+  accountStatus: 'active' | 'suspended' | 'banned';
+  createdAt: Date;
+  updatedAt: Date;
+}
+Settlement Object
+{
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  brands: string[];
+  country: string;
+  shortDescription: string;
+  fullDescription: string | null;
+  dateRangeStart: Date | null;
+  dateRangeEnd: Date | null;
+  claimDeadline: Date | null;
+  payoutMinEstimate: string | null;  // Decimal as string
+  payoutMaxEstimate: string | null;  // Decimal as string
+  proofRequired: boolean;
+  claimWebsiteUrl: string | null;
+  claimFormUrl: string | null;
+  source: string | null;
+  sourceUrl: string | null;
+  logoUrl: string | null;
+  status: 'OPEN' | 'CLOSED' | 'PAYING' | 'ARCHIVED' | 'EXPIRING';
+  keyRequirements: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+User Settlement (Claim) Object
+{
+  id: string;
+  userId: string;
+  settlementId: string;
+  eligibilityResult: 'LIKELY' | 'POSSIBLE' | 'UNLIKELY' | null;
+  eligibilityAnswers: Record<string, any> | null;
+  status: 'NOT_FILED' | 'FILED_PENDING' | 'PAID' | 'REJECTED' | 'UNKNOWN';
+  claimId: string | null;
+  claimConfirmationNumber: string | null;
+  filedAt: Date | null;
+  payoutAmount: string | null;  // Decimal as string
+  payoutReceivedAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+User Profile Object
+{
+  id: string;
+  userId: string;
+  preferredCategories: string[];
+  preferredBrands: string[];
+  emailDeadlineReminders: boolean;
+  emailNewSettlements: boolean;
+  emailClaimUpdates: boolean;
+  emailWeeklyDigest: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+⚠️ Special Requirements
+Rate Limits: None currently configured, but be respectful with API calls
+API Versioning: None - all endpoints are at /api/...
+Content-Type: Always use application/json for request bodies
+Timezone: All dates displayed in America/New_York (Eastern Time) using date-fns-tz
+Claim Limits: Free tier users get 3 lifetime claims; paid plans get monthly reset
+🔗 Production URLs
+API Base: https://settlementfast.com/api
+Supabase URL: https://misxfwpxaukxdklqcxfq.supabase.co
