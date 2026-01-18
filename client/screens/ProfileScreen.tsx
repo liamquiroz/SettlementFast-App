@@ -119,16 +119,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleEditProfile = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("EditProfile");
-  };
-
-  const handleNotifications = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("NotificationSettings");
-  };
-
   const handleEmailPreferences = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("EmailPreferences");
@@ -242,21 +232,9 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-          ACCOUNT
+          NOTIFICATIONS
         </ThemedText>
         <View style={[styles.settingsGroup, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
-          <SettingsItem
-            icon="user"
-            label="Edit Profile"
-            onPress={handleEditProfile}
-          />
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <SettingsItem
-            icon="bell"
-            label="Notifications"
-            onPress={handleNotifications}
-          />
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SettingsItem
             icon="mail"
             label="Email Preferences"

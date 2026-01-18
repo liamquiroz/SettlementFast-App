@@ -5,8 +5,6 @@ import MainTabNavigator from "@/navigation/MainTabNavigator";
 import SettlementDetailScreen from "@/screens/SettlementDetailScreen";
 import ClaimDetailScreen from "@/screens/ClaimDetailScreen";
 import LoginScreen from "@/screens/LoginScreen";
-import EditProfileScreen from "@/screens/EditProfileScreen";
-import NotificationSettingsScreen from "@/screens/NotificationSettingsScreen";
 import EmailPreferencesScreen from "@/screens/EmailPreferencesScreen";
 import PreferredCategoriesScreen from "@/screens/PreferredCategoriesScreen";
 import PreferredBrandsScreen from "@/screens/PreferredBrandsScreen";
@@ -18,8 +16,6 @@ export type RootStackParamList = {
   Login: undefined;
   SettlementDetail: { slug: string };
   ClaimDetail: { claimId: string };
-  EditProfile: undefined;
-  NotificationSettings: undefined;
   EmailPreferences: undefined;
   PreferredCategories: undefined;
   PreferredBrands: undefined;
@@ -65,22 +61,6 @@ export default function RootStackNavigator() {
         options={{
           presentation: "modal",
           headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="EditProfile"
-        component={EditProfileScreen}
-        options={{
-          headerTitle: "Edit Profile",
-          headerBackTitle: "Back",
-        }}
-      />
-      <Stack.Screen
-        name="NotificationSettings"
-        component={NotificationSettingsScreen}
-        options={{
-          headerTitle: "Notifications",
-          headerBackTitle: "Back",
         }}
       />
       <Stack.Screen
