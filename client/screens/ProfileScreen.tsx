@@ -3,6 +3,8 @@ import { StyleSheet, View, Pressable, Image, Alert, Switch, ScrollView } from "r
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
@@ -12,6 +14,9 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface SettingsItemProps {
   icon: keyof typeof Feather.glyphMap;
@@ -79,6 +84,12 @@ export default function ProfileScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const { user, profile, isAuthenticated, signOut } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
+
+  const handleSignIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("Login");
+  };
 
   const handleCopyReferralCode = async () => {
     if (profile?.referralCode) {
@@ -119,7 +130,7 @@ export default function ProfileScreen() {
           <ThemedText type="small" style={[styles.notAuthSubtitle, { color: theme.textSecondary }]}>
             Track your claims and get personalized recommendations
           </ThemedText>
-          <Button style={styles.signInButton}>
+          <Button onPress={handleSignIn} style={styles.signInButton} testID="button-sign-in">
             Sign In
           </Button>
         </View>

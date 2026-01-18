@@ -1,36 +1,29 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { Platform } from "react-native";
 
 /**
- * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
+ * Gets the base URL for the Express API server
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
+  // For web platform, detect the current origin and use port 5000
+  if (Platform.OS === "web" && typeof window !== "undefined" && window.location) {
+    const { protocol, hostname } = window.location;
+    // Always route to port 5000 for the backend API
+    return `${protocol}//${hostname}:5000`;
+  }
+  
+  // For native (iOS/Android), use the EXPO_PUBLIC_DOMAIN env var
   let host = process.env.EXPO_PUBLIC_DOMAIN;
 
-  // Fallback for local development or when env var is not set
-  if (!host) {
-    // Check if we're on web and can detect the current origin
-    if (typeof window !== "undefined" && window.location) {
-      // Use port 5000 for the backend
-      const { protocol, hostname } = window.location;
-      return `${protocol}//${hostname}:5000`;
-    }
-    // For native, try localhost
-    return "http://localhost:5000";
+  if (host) {
+    // Remove any existing port suffix
+    const hostWithoutPort = host.replace(/:5000$/, "").replace(/:8081$/, "");
+    return `https://${hostWithoutPort}`;
   }
 
-  // Remove port if it's already included, we want to use port 5000
-  const hostWithoutPort = host.replace(/:5000$/, "").replace(/:8081$/, "");
-  
-  // Use HTTPS for production domains
-  const protocol = hostWithoutPort.includes("localhost") ? "http" : "https";
-  
-  // Always point to port 5000 for the backend
-  const url = hostWithoutPort.includes("localhost") 
-    ? `${protocol}://${hostWithoutPort}:5000`
-    : `${protocol}://${hostWithoutPort}`;
-
-  return url;
+  // Fallback for development
+  return "http://localhost:5000";
 }
 
 async function throwIfResNotOk(res: Response) {
