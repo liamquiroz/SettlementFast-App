@@ -18,6 +18,7 @@ Preferred communication style: Simple, everyday language.
   - Root Stack Navigator handles authentication flow and modal screens
   - Main Tab Navigator with 4 tabs: Home, Browse, My Claims, Profile
   - Each tab has its own stack navigator for deep navigation
+- **Payments**: Stripe integration with platform-specific wrappers (StripeWrapper.native.tsx / .web.tsx)
 - **State Management**: TanStack React Query for server state, React Context for auth state
 - **Styling**: Custom theme system with light/dark mode support, Montserrat font family
 - **Animations**: React Native Reanimated for smooth, performant animations with spring physics
@@ -84,3 +85,13 @@ DATABASE_URL=(PostgreSQL connection string)
 - `react-native-reanimated` - Animations
 - `expo-haptics` - Haptic feedback
 - `date-fns` - Date formatting
+- `@stripe/stripe-react-native` - Stripe payments (native only, uses platform-specific file pattern)
+
+## Recent Changes
+
+### Subscription Management (Jan 2026)
+- Added ManageSubscriptionScreen with current plan info, usage stats, and billing period
+- Available plans section with upgrade/downgrade buttons that open Stripe checkout
+- Payment methods section with list, add card, delete, and set default functionality
+- Navigation from Profile → "Manage Plan" under SUBSCRIPTION section
+- Stripe integration uses platform-specific wrappers (StripeWrapper.native.tsx and StripeWrapper.web.tsx) because @stripe/stripe-react-native is native-only and breaks web bundling if imported directly
