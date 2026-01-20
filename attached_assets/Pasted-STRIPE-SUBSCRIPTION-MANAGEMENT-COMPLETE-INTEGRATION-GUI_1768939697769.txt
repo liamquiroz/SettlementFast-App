@@ -1,0 +1,271 @@
+STRIPE & SUBSCRIPTION MANAGEMENT - COMPLETE INTEGRATION GUIDE
+Production API Base URL: https://settlementfast.com/api
+
+Stripe Publishable Key: pk_live_51SYYQGBYft30iHJKWpdEnAsiu5ebYRgy50HYrrYQ5NAi7GJAYdMzCDHwlS2BgtYizT7QBkEaXDK5diXnOeI5t9s800EQ7WG5eR
+
+All API calls require the Supabase JWT token in Authorization header:
+
+Authorization: Bearer <supabase_access_token>
+1. SUBSCRIPTION PLAN SYSTEM
+Plan Types:
+
+individual plans: Free, Pro, Premium (for regular users)
+firm plans: Basic, Growth, Enterprise (for legal professionals)
+GET /api/subscription-plans (Public - no auth required)
+
+// Query params: ?tierType=individual or ?tierType=firm
+// Response: Array of SubscriptionPlan objects
+{
+  id: string,
+  name: string,                    // "free", "pro", "premium", "firm_basic", etc.
+  displayName: string,             // "Free Plan", "Pro Plan", etc.
+  tierType: "individual" | "firm",
+  priceMonthly: string | null,     // "9.99", "19.99", null for free
+  stripePriceId: string | null,    // Stripe price ID for checkout
+  includedClaims: number | null,   // Monthly claim limit
+  isUnlimited: boolean,            // true for unlimited plans
+  overagePrice: string | null,     // Price per extra claim
+  features: PlanFeature[],         // Array of {text, type: "perk"|"limitation"}
+  highlightColor: string | null,   // For UI styling
+  isActive: boolean,
+  sortOrder: number
+}
+GET /api/subscription (Auth required)
+
+// Returns current user's subscription
+{
+  id: string,
+  userId: string,
+  planId: string,
+  stripeSubscriptionId: string | null,
+  stripeCustomerId: string | null,
+  status: "active" | "canceled" | "past_due" | "incomplete",
+  currentPeriodStart: string | null,  // ISO date
+  currentPeriodEnd: string | null,    // ISO date
+  cancelAtPeriodEnd: boolean,
+  createdAt: string,
+  updatedAt: string,
+  plan: SubscriptionPlan              // Joined plan details
+}
+GET /api/subscription/usage (Auth required)
+
+// Returns current usage stats
+{
+  planName: string,                    // "Free Plan", "Admin (Unlimited)", etc.
+  includedClaims: number | null,       // null means unlimited
+  claimsUsed: number,
+  claimsRemaining: number | null,      // null means unlimited
+  overageClaims: number,
+  isUnlimited: boolean,
+  periodStart: string | null,          // ISO date
+  periodEnd: string | null             // ISO date - use for "Resets on X" display
+}
+2. SUBSCRIPTION CHECKOUT & MANAGEMENT
+POST /api/subscription/checkout (Auth required)
+
+// Request: { planId: string }
+// Response: { url: string }  - Stripe Checkout URL
+// Mobile: Open this URL in an in-app browser or WebView
+// After payment, user is redirected to success URL with ?subscription_success=true
+POST /api/subscription/portal (Auth required)
+
+// Creates Stripe Customer Portal session
+// Response: { url: string }
+// Use for: viewing invoices, updating payment method, viewing billing history
+POST /api/subscription/cancel (Auth required)
+
+// Cancels subscription at period end
+// Response: { message: "Subscription will be canceled at period end" }
+POST /api/subscription/reactivate (Auth required)
+
+// Reactivates a canceled subscription before period end
+// Response: { message: "Subscription reactivated" }
+POST /api/subscription/billing-portal (Auth required)
+
+// Opens Stripe billing portal
+// Response: { url: string }
+3. PAY-AS-YOU-GO (PAYG) SYSTEM
+For users who exceed their plan limits, they can purchase individual claims.
+
+GET /api/payg/settings (Public)
+
+{
+  isEnabled: boolean,
+  pricePerClaim: string,     // e.g., "4.99"
+  freeClaimsPerUser: number  // Legacy, use plan limits instead
+}
+GET /api/payg/stats (Auth required)
+
+{
+  totalPurchases: number,
+  totalSpent: number,
+  claimsPurchased: number,
+  claimsUsed: number,        // From plan-based usage
+  claimsTotal: number,       // Plan's included claims
+  claimsRemaining: number,   // From plan-based usage
+  pricePerClaim: string
+}
+GET /api/payg/payment-methods (Auth required)
+
+// Returns saved payment methods
+[{
+  id: string,
+  userId: string,
+  stripePaymentMethodId: string,
+  stripeCustomerId: string,
+  cardBrand: string | null,    // "visa", "mastercard", etc.
+  cardLast4: string | null,    // "4242"
+  cardExpMonth: number | null,
+  cardExpYear: number | null,
+  isDefault: boolean,
+  createdAt: string
+}]
+POST /api/payg/setup-intent (Auth required)
+
+// Creates Stripe SetupIntent for saving a card
+// Response: { clientSecret: string, customerId: string }
+// Use with Stripe SDK to collect card details
+POST /api/payg/payment-methods (Auth required)
+
+// Save payment method after SetupIntent confirmation
+// Request: { paymentMethodId: string, stripeCustomerId: string }
+// Response: PaymentMethod object
+DELETE /api/payg/payment-methods/:id (Auth required)
+
+// Remove saved payment method
+// Response: 204 No Content
+POST /api/payg/payment-methods/:id/default (Auth required)
+
+// Set as default payment method
+// Response: { success: true }
+POST /api/payg/purchase (Auth required)
+
+// Purchase a claim with saved payment method
+// Request: { userSettlementId?: string, paymentMethodId?: string }
+// Response scenarios:
+// 1. User has remaining plan claims:
+   { success: true, usedPlanClaim: true, claimsRemaining: number, message: string }
+// 2. PAYG purchase successful:
+   { success: true, purchase: PurchaseObject, userSettlement: UserSettlement }
+// 3. No payment method:
+   { message: "No payment method available", requiresPaymentSetup: true }
+// 4. PAYG disabled:
+   { message: "Pay-as-you-go is currently disabled" }
+GET /api/payg/can-submit (Auth required)
+
+// Quick check if user can submit a new claim
+// Response: { canSubmit: boolean, reason?: string, claimsRemaining?: number }
+4. MOBILE-SPECIFIC STRIPE IMPLEMENTATION
+Required Package: @stripe/stripe-react-native
+
+Initialize Stripe:
+
+import { StripeProvider } from '@stripe/stripe-react-native';
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SYYQGBYft30iHJKWpdEnAsiu5ebYRgy50HYrrYQ5NAi7GJAYdMzCDHwlS2BgtYizT7QBkEaXDK5diXnOeI5t9s800EQ7WG5eR';
+<StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+  <App />
+</StripeProvider>
+Adding a Payment Method Flow:
+
+import { useStripe } from '@stripe/stripe-react-native';
+const { confirmSetupIntent } = useStripe();
+// 1. Get setup intent from backend
+const response = await fetch(`${API_BASE}/api/payg/setup-intent`, {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+const { clientSecret, customerId } = await response.json();
+// 2. Collect card with Stripe SDK
+const { setupIntent, error } = await confirmSetupIntent(clientSecret, {
+  paymentMethodType: 'Card',
+});
+// 3. Save to backend
+if (setupIntent?.paymentMethodId) {
+  await fetch(`${API_BASE}/api/payg/payment-methods`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      paymentMethodId: setupIntent.paymentMethodId,
+      stripeCustomerId: customerId
+    })
+  });
+}
+Opening Stripe Checkout (for subscriptions):
+
+import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+// Get checkout URL from backend
+const response = await fetch(`${API_BASE}/api/subscription/checkout`, {
+  method: 'POST',
+  headers: { 
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ planId })
+});
+const { url } = await response.json();
+// Open in browser
+await WebBrowser.openBrowserAsync(url);
+5. CLAIM LIMITS LOGIC (Match Web App Exactly)
+// Check claim limits before showing ClaimActionPanel buttons
+async function checkClaimEligibility(token: string) {
+  const [usageRes, paygRes] = await Promise.all([
+    fetch(`${API_BASE}/api/subscription/usage`, { headers: { Authorization: `Bearer ${token}` } }),
+    fetch(`${API_BASE}/api/payg/stats`, { headers: { Authorization: `Bearer ${token}` } })
+  ]);
+  
+  const usage = await usageRes.json();
+  const payg = await paygRes.json();
+  
+  return {
+    canSubmit: usage.isUnlimited || (usage.claimsRemaining !== null && usage.claimsRemaining > 0),
+    claimsRemaining: usage.claimsRemaining,
+    isUnlimited: usage.isUnlimited,
+    planName: usage.planName,
+    periodEnd: usage.periodEnd,  // For "Resets on X" display
+    paygAvailable: payg.pricePerClaim && parseFloat(payg.pricePerClaim) > 0,
+    pricePerClaim: payg.pricePerClaim
+  };
+}
+Display Logic:
+
+If isUnlimited: Show "Unlimited claims"
+If paid plan: Show "X remaining · Resets [date]"
+If free plan: Show "X lifetime claims remaining"
+If at limit: Show upgrade modal with PAYG option
+6. MANAGE PLAN SCREEN
+Display identical to web app:
+
+Current Plan Section:
+
+Plan name and price
+Billing period dates
+Days until reset badge
+Claims usage progress bar
+Cancel/Reactivate buttons
+Available Plans Section:
+
+Fetch from /api/subscription-plans
+Group by tierType if showing both
+Highlight current plan
+"Upgrade" or "Downgrade" buttons
+Payment Methods Section:
+
+List saved cards from /api/payg/payment-methods
+Add new card button (uses setup-intent flow)
+Delete and set default options
+7. WEBHOOK HANDLING
+Webhooks are handled server-side at POST /api/stripe/webhook. The mobile app doesn't need to handle these - just refetch subscription data after checkout completes:
+
+// After returning from Stripe checkout
+useEffect(() => {
+  if (url.includes('subscription_success=true')) {
+    // Refetch subscription data
+    queryClient.invalidateQueries({ queryKey: ['/api/subscription'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/subscription/usage'] });
+  }
+}, [url]);
+This ensures your mobile app will have identical subscription/payment behavior to the web app. Users can seamlessly switch between platforms with their subscription, saved payment methods, and claim usage synced via the shared backend.
