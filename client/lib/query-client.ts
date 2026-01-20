@@ -14,12 +14,16 @@ export function getApiUrl(): string {
   }
   
   // For native (iOS/Android), use the EXPO_PUBLIC_DOMAIN env var
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
+  // EXPO_PUBLIC_DOMAIN is set to $REPLIT_DEV_DOMAIN:5000
+  const host = process.env.EXPO_PUBLIC_DOMAIN;
 
   if (host) {
-    // Remove any existing port suffix
-    const hostWithoutPort = host.replace(/:5000$/, "").replace(/:8081$/, "");
-    return `https://${hostWithoutPort}`;
+    // Check if host already has a port (e.g., "domain:5000")
+    if (host.includes(":")) {
+      return `https://${host}`;
+    }
+    // Add port 5000 for backend
+    return `https://${host}:5000`;
   }
 
   // Fallback for development

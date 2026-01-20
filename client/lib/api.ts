@@ -1,9 +1,17 @@
 import { supabase } from "./supabase";
+import { Platform } from "react-native";
 
 import { getApiUrl } from "./query-client";
 
 // Use local proxy in development to bypass CORS, direct API in production
 const API_BASE_URL = getApiUrl();
+
+// Debug logging for native platforms
+if (Platform.OS !== "web") {
+  console.log("[API] Platform:", Platform.OS);
+  console.log("[API] EXPO_PUBLIC_DOMAIN:", process.env.EXPO_PUBLIC_DOMAIN);
+  console.log("[API] API_BASE_URL:", API_BASE_URL);
+}
 
 // Endpoints that require authentication (user-specific data)
 const AUTH_REQUIRED_ENDPOINTS = [
