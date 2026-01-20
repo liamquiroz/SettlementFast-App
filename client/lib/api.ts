@@ -19,6 +19,7 @@ const AUTH_REQUIRED_ENDPOINTS = [
   "/api/user/profile",
   "/api/email-preferences",
   "/api/dashboard/stats",
+  "/api/auth/user",
 ];
 
 function requiresAuth(endpoint: string): boolean {
@@ -30,18 +31,23 @@ function requiresAuth(endpoint: string): boolean {
 async function getAuthHeaders(endpoint: string): Promise<Record<string, string>> {
   // Only add auth headers for endpoints that require authentication
   if (!requiresAuth(endpoint)) {
+    console.log(`[API] Endpoint ${endpoint} does not require auth`);
     return {
       "Content-Type": "application/json",
     };
   }
 
+  console.log(`[API] Endpoint ${endpoint} requires auth, getting session...`);
   const { data: { session } } = await supabase.auth.getSession();
+  console.log(`[API] Session exists: ${!!session}, has token: ${!!session?.access_token}`);
+  
   if (session?.access_token) {
     return {
       "Authorization": `Bearer ${session.access_token}`,
       "Content-Type": "application/json",
     };
   }
+  console.log(`[API] No auth token available for ${endpoint}`);
   return {
     "Content-Type": "application/json",
   };

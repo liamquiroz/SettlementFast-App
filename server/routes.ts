@@ -9,6 +9,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const targetUrl = `${PRODUCTION_API_URL}${req.originalUrl}`;
       
+      // Log incoming request
+      console.log(`${req.method} ${req.originalUrl} - proxying to ${targetUrl}`);
+      
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
@@ -17,6 +20,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authHeader = req.headers.authorization;
       if (authHeader) {
         headers["Authorization"] = authHeader;
+        console.log(`  Auth header present: Bearer ${authHeader.substring(0, 20)}...`);
+      } else {
+        console.log(`  No auth header present`);
       }
 
       const fetchOptions: RequestInit = {
@@ -27,9 +33,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Include body for POST, PUT, PATCH requests
       if (["POST", "PUT", "PATCH"].includes(req.method) && req.body) {
         fetchOptions.body = JSON.stringify(req.body);
+        console.log(`  Request body:`, req.body);
       }
 
       const response = await fetch(targetUrl, fetchOptions);
+      
+      console.log(`  Response status: ${response.status}`);
       
       // Forward status code
       res.status(response.status);
@@ -46,6 +55,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.text();
+      
+      // Log response for debugging (truncate if too long)
+      const logData = data.length > 200 ? data.substring(0, 200) + "..." : data;
+      console.log(`  Response body: ${logData}`);
       
       try {
         // Try to parse as JSON

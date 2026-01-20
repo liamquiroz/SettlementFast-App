@@ -122,7 +122,15 @@ export function ClaimActionPanel({
     }
   };
 
-  const handleSaveTrack = async (confirmationNumber?: string) => {
+  const handleSaveTrack = async () => {
+    console.log("[ClaimActionPanel] handleSaveTrack called");
+    console.log("[ClaimActionPanel] isAuthenticated:", isAuthenticated);
+    console.log("[ClaimActionPanel] isTracking:", isTracking);
+    console.log("[ClaimActionPanel] settlementId:", settlement.id);
+
+    // Debug - temporary alert to confirm function is called
+    Alert.alert("Debug", `Function called. Auth: ${isAuthenticated}, Tracking: ${isTracking}`);
+
     if (!isAuthenticated) {
       Alert.alert("Sign In Required", "Please sign in to track claims.", [
         { text: "Cancel", style: "cancel" },
@@ -131,17 +139,22 @@ export function ClaimActionPanel({
       return;
     }
 
-    if (isTracking) return;
+    if (isTracking) {
+      console.log("[ClaimActionPanel] Already tracking, returning early");
+      return;
+    }
 
     setIsSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
+      console.log("[ClaimActionPanel] Calling userSettlementsApi.create...");
       const newClaim = await userSettlementsApi.create({
         settlementId: settlement.id,
         eligibilityResult: "POSSIBLE",
         eligibilityAnswers,
       });
+      console.log("[ClaimActionPanel] Claim created successfully:", newClaim);
 
       setIsTracking(true);
       clearReminderInterval();
@@ -149,8 +162,10 @@ export function ClaimActionPanel({
       Alert.alert("Saved!", "You're now tracking this settlement claim.");
       onClaimSaved?.(newClaim);
     } catch (error: unknown) {
+      console.error("[ClaimActionPanel] Error saving claim:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
+      console.error("[ClaimActionPanel] Error message:", errorMessage);
 
       if (errorMessage.includes("LIMIT_REACHED")) {
         Alert.alert(
@@ -158,7 +173,7 @@ export function ClaimActionPanel({
           "You've used all your available claims. Upgrade your plan to save more claims."
         );
       } else {
-        Alert.alert("Error", "Failed to save claim. Please try again.");
+        Alert.alert("Error", `Failed to save claim: ${errorMessage}`);
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
@@ -204,8 +219,9 @@ export function ClaimActionPanel({
   };
 
   const handleReminderSave = async () => {
-    setShowReminderModal(false);
+    console.log("[ClaimActionPanel] Reminder modal Save & Track button pressed");
     await handleSaveTrack();
+    setShowReminderModal(false);
   };
 
   const canVisitWebsite =
@@ -286,13 +302,17 @@ export function ClaimActionPanel({
 
       <Pressable
         testID="button-save-track-claim"
-        onPress={() => handleSaveTrack()}
-        disabled={isTracking || isDeadlinePassed || isSaving}
+        onPress={() => {
+          console.log("[ClaimActionPanel] Save & Track button pressed");
+          console.log("[ClaimActionPanel] Button disabled states:", { isTracking, isSaving });
+          handleSaveTrack();
+        }}
+        disabled={isTracking || isSaving}
         style={({ pressed }) => [
           styles.button,
           isTracking ? styles.blueButtonDisabled : styles.blueButton,
           {
-            opacity: pressed || isTracking || isDeadlinePassed ? 0.7 : 1,
+            opacity: pressed || isTracking ? 0.7 : 1,
           },
         ]}
       >
