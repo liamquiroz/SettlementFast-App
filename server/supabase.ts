@@ -49,7 +49,7 @@ export async function getAppUserIdFromSupabaseId(supabaseUserId: string): Promis
     const { data, error } = await supabaseAdmin
       .from("users")
       .select("id")
-      .eq("supabaseUserId", supabaseUserId)
+      .eq("supabase_user_id", supabaseUserId)
       .single();
 
     if (error || !data) {

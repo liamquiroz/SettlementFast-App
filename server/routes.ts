@@ -169,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .from("users")
           .insert({
             email: authUser.email || "",
-            supabaseUserId: authUser.id,
+            supabase_user_id: authUser.id,
           })
           .select()
           .single();
@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { data: user, error } = await supabaseAdmin
         .from("users")
         .select("*")
-        .eq("supabaseUserId", authUser.id)
+        .eq("supabase_user_id", authUser.id)
         .single();
 
       if (error || !user) {
