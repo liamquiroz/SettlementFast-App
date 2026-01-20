@@ -1,0 +1,241 @@
+Here's the complete response to give your mobile app project:
+
+Complete Supabase Database Schema for SettlementFast
+The shared Supabase project (misxfwpxaukxdklqcxfq) contains the following tables. For the mobile app, you primarily need tables marked with ⭐.
+
+Core Tables for Mobile App ⭐
+1. users ⭐
+{
+  id: varchar (primary key, UUID),
+  email: varchar (unique),
+  firstName: varchar | null,
+  lastName: varchar | null,
+  profileImageUrl: varchar | null,
+  isAdmin: boolean (default: false),
+  hasCompletedOnboarding: boolean (default: false),
+  referralCode: varchar (unique) | null,
+  referredBy: varchar | null,
+  isLawyer: boolean (default: false),
+  lawyerVerificationStatus: enum('pending', 'verified', 'rejected') | null,
+  lawyerWorkEmail: varchar | null,
+  lawyerLegalName: varchar | null,
+  lawyerBarJurisdiction: varchar | null,
+  lawyerBarNumber: varchar | null,
+  freeClaimsUsed: integer (default: 0),
+  stripeCustomerId: varchar | null,
+  supabaseUserId: varchar (unique) ← Links to Supabase Auth user.id,
+  accountStatus: enum('active', 'suspended', 'banned') (default: 'active'),
+  suspendedUntil: timestamp | null,
+  suspensionReason: text | null,
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+2. settlements ⭐
+{
+  id: varchar (primary key, UUID),
+  title: varchar(255),
+  slug: varchar(255) (unique),
+  category: varchar(100),
+  brands: text[] (default: []),
+  country: varchar(100) (default: 'US'),
+  shortDescription: text,
+  fullDescription: text | null,
+  dateRangeStart: timestamp | null,
+  dateRangeEnd: timestamp | null,
+  claimDeadline: timestamp | null,
+  payoutMinEstimate: numeric(10,2) | null,
+  payoutMaxEstimate: numeric(10,2) | null,
+  proofRequired: boolean (default: false),
+  claimWebsiteUrl: varchar(500) | null,
+  claimFormUrl: varchar(500) | null,
+  source: varchar(255) | null,
+  sourceUrl: varchar(500) | null,
+  logoUrl: varchar(500) | null,
+  status: enum('OPEN', 'CLOSED', 'PAYING', 'ARCHIVED', 'EXPIRING') (default: 'OPEN'),
+  dataOrigin: enum('mock', 'real') (default: 'mock'),
+  keyRequirements: text[] (default: []),
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+3. user_settlements ⭐ (Claims tracking)
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  settlementId: varchar → references settlements.id,
+  eligibilityResult: enum('LIKELY', 'POSSIBLE', 'UNLIKELY') | null,
+  eligibilityAnswers: jsonb | null,
+  status: enum('NOT_FILED', 'FILED_PENDING', 'PAID', 'REJECTED', 'UNKNOWN') (default: 'NOT_FILED'),
+  claimId: varchar(255) | null,
+  claimConfirmationNumber: varchar(255) | null,
+  filedAt: timestamp | null,
+  payoutAmount: numeric(10,2) | null,
+  payoutReceivedAt: timestamp | null,
+  notes: text | null,
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+4. eligibility_questions ⭐
+{
+  id: varchar (primary key, UUID),
+  settlementId: varchar → references settlements.id (cascade delete),
+  questionText: text,
+  questionType: enum('YES_NO', 'MULTIPLE_CHOICE') (default: 'YES_NO'),
+  options: text[] (default: []),
+  weight: integer (default: 1),
+  orderIndex: integer (default: 0),
+  createdAt: timestamp
+}
+5. user_profiles ⭐
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  preferredCategories: text[] (default: []),
+  preferredBrands: text[] (default: []),
+  emailDeadlineReminders: boolean (default: true),
+  emailNewSettlements: boolean (default: true),
+  emailClaimUpdates: boolean (default: true),
+  emailWeeklyDigest: boolean (default: false),
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+6. notifications ⭐
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  type: varchar(50),
+  title: varchar(255),
+  message: text,
+  settlementId: varchar → references settlements.id | null,
+  isRead: boolean (default: false),
+  createdAt: timestamp
+}
+7. push_tokens ⭐ (Mobile push notifications)
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  token: varchar(500) (unique) ← Expo push token,
+  platform: enum('ios', 'android', 'web'),
+  deviceId: varchar(255) | null,
+  deviceName: varchar(255) | null,
+  isActive: boolean (default: true),
+  lastUsedAt: timestamp,
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+Subscription & Payment Tables
+8. subscription_plans
+{
+  id: varchar (primary key, UUID),
+  name: varchar(100),
+  displayName: varchar(255),
+  description: text | null,
+  tierType: enum('individual', 'firm'),
+  priceMonthly: numeric(10,2),
+  includedClaims: integer | null,
+  overagePrice: numeric(10,2) | null,
+  isUnlimited: boolean (default: false),
+  features: jsonb (array of {text, type, tooltip?}),
+  stripePriceId: varchar(255) | null,
+  stripeProductId: varchar(255) | null,
+  isActive: boolean (default: true),
+  displayOrder: integer (default: 0),
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+9. user_subscriptions
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  planId: varchar → references subscription_plans.id,
+  stripeCustomerId: varchar(255) | null,
+  stripeSubscriptionId: varchar(255) | null,
+  status: enum('active', 'canceled', 'past_due', 'unpaid', 'trialing', 'incomplete', 'incomplete_expired', 'paused') (default: 'active'),
+  currentPeriodStart: timestamp | null,
+  currentPeriodEnd: timestamp | null,
+  cancelAtPeriodEnd: boolean (default: false),
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+10. usage_records
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  subscriptionId: varchar → references user_subscriptions.id | null,
+  userSettlementId: varchar → references user_settlements.id | null,
+  periodStart: timestamp,
+  periodEnd: timestamp,
+  claimsUsed: integer (default: 0),
+  overageClaims: integer (default: 0),
+  overageBilled: boolean (default: false),
+  createdAt: timestamp
+}
+11. payg_settings (Pay-As-You-Go pricing)
+{
+  id: varchar (primary key, UUID),
+  pricePerClaim: numeric(10,2) (default: '4.99'),
+  isEnabled: boolean (default: true),
+  description: text | null,
+  updatedAt: timestamp
+}
+12. payg_payment_methods
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  stripePaymentMethodId: varchar(255),
+  stripeCustomerId: varchar(255),
+  cardBrand: varchar(50) | null,
+  cardLast4: varchar(4) | null,
+  cardExpMonth: integer | null,
+  cardExpYear: integer | null,
+  isDefault: boolean (default: false),
+  createdAt: timestamp
+}
+13. payg_purchases
+{
+  id: varchar (primary key, UUID),
+  userId: varchar → references users.id,
+  userSettlementId: varchar → references user_settlements.id | null,
+  amount: numeric(10,2),
+  claimCount: integer (default: 1),
+  stripePaymentIntentId: varchar(255) | null,
+  status: enum('pending', 'completed', 'failed', 'refunded') (default: 'pending'),
+  createdAt: timestamp,
+  completedAt: timestamp | null
+}
+Other Tables (Admin/Backend Use)
+Table	Purpose
+sessions	Legacy session storage (Replit Auth)
+referrals	Referral tracking between users
+email_logs	Email notification history
+scheduled_reminders	User-scheduled deadline reminders
+reminder_settings	Admin reminder interval config
+email_templates	Admin-editable email templates
+data_sources	Settlement data source configs
+ingestion_logs	Data import logging
+data_mode_settings	Admin data mode toggle
+settlements_pending	Pending settlements awaiting admin review
+legal_pages	Terms of Service, Privacy Policy
+pricing_faqs	Pricing page FAQs
+firms	Law firm accounts
+firm_members	Firm membership linking
+firm_subscriptions	Firm-level subscriptions
+firm_usage_records	Firm usage tracking
+import_mapping_presets	Bulk import column mappings
+import_templates	Admin import templates
+import_jobs	Bulk import job tracking
+email_bans	Banned email blocklist
+user_audit_logs	Admin action logs
+Enums Used
+settlement_status: 'OPEN' | 'CLOSED' | 'PAYING' | 'ARCHIVED' | 'EXPIRING'
+eligibility_result: 'LIKELY' | 'POSSIBLE' | 'UNLIKELY'
+claim_status: 'NOT_FILED' | 'FILED_PENDING' | 'PAID' | 'REJECTED' | 'UNKNOWN'
+question_type: 'YES_NO' | 'MULTIPLE_CHOICE'
+account_status: 'active' | 'suspended' | 'banned'
+subscription_status: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'trialing' | 'incomplete' | 'incomplete_expired' | 'paused'
+push_token_platform: 'ios' | 'android' | 'web'
+Important Notes for Mobile App
+User linking: The users.supabaseUserId column links to auth.users.id in Supabase Auth
+All IDs are UUIDs stored as varchar, not integers
+Timestamps: All timestamps are stored in UTC
+Arrays: PostgreSQL text arrays (e.g., brands, preferredCategories)
+The mobile app should NOT write directly to these tables - use the API endpoints instead
