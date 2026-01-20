@@ -203,9 +203,9 @@ export function ClaimActionPanel({
     openClaimForm();
   };
 
-  const handleReminderSave = () => {
+  const handleReminderSave = async () => {
     setShowReminderModal(false);
-    handleSaveTrack(claimConfirmationNumber);
+    await handleSaveTrack();
   };
 
   const canVisitWebsite =
@@ -316,20 +316,20 @@ export function ClaimActionPanel({
         disabled={!canVisitWebsite}
         style={({ pressed }) => [
           styles.button,
-          canVisitWebsite ? styles.blueButton : styles.greyButton,
+          canVisitWebsite ? styles.blueButton : styles.disabledButton,
           { opacity: pressed ? 0.7 : 1 },
         ]}
       >
         <Feather
           name="external-link"
           size={18}
-          color={canVisitWebsite ? "#FFFFFF" : "#9ca3af"}
+          color={canVisitWebsite ? "#FFFFFF" : "#6b7280"}
         />
         <ThemedText
           type="body"
           style={[
             styles.buttonText,
-            { color: canVisitWebsite ? "#FFFFFF" : "#9ca3af" },
+            { color: canVisitWebsite ? "#FFFFFF" : "#374151" },
           ]}
         >
           Visit Settlement Website
@@ -621,8 +621,8 @@ const styles = StyleSheet.create({
   blueButtonDisabled: {
     backgroundColor: "#93c5fd",
   },
-  greyButton: {
-    backgroundColor: "#9ca3af",
+  disabledButton: {
+    backgroundColor: "#e5e7eb",
   },
   outlineButton: {
     backgroundColor: "#f3f4f6",
