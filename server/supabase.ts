@@ -14,7 +14,12 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   },
 });
 
-export async function getUserIdFromToken(authHeader: string | undefined): Promise<string | null> {
+export interface AuthUser {
+  id: string;
+  email: string | undefined;
+}
+
+export async function getUserFromToken(authHeader: string | undefined): Promise<AuthUser | null> {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
@@ -29,7 +34,10 @@ export async function getUserIdFromToken(authHeader: string | undefined): Promis
       return null;
     }
     
-    return user.id;
+    return {
+      id: user.id,
+      email: user.email,
+    };
   } catch (error) {
     console.error("[Supabase] Error verifying token:", error);
     return null;

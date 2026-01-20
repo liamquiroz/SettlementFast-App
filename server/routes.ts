@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { supabaseAdmin, getUserIdFromToken, getAppUserIdFromSupabaseId } from "./supabase";
+import { supabaseAdmin, getUserFromToken, getAppUserIdFromSupabaseId } from "./supabase";
 
 const PRODUCTION_API_URL = "https://settlementfast.com";
 
@@ -9,13 +9,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Local endpoint: Get user settlements (claims)
   app.get("/api/user-settlements", async (req: Request, res: Response) => {
     try {
-      const supabaseUserId = await getUserIdFromToken(req.headers.authorization);
+      const authUser = await getUserFromToken(req.headers.authorization);
       
-      if (!supabaseUserId) {
+      if (!authUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const appUserId = await getAppUserIdFromSupabaseId(supabaseUserId);
+      const appUserId = await getAppUserIdFromSupabaseId(authUser.id);
       
       if (!appUserId) {
         console.log("[API] No app user found, returning empty claims list");
@@ -49,13 +49,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Local endpoint: Get user settlements stats
   app.get("/api/user-settlements/stats", async (req: Request, res: Response) => {
     try {
-      const supabaseUserId = await getUserIdFromToken(req.headers.authorization);
+      const authUser = await getUserFromToken(req.headers.authorization);
       
-      if (!supabaseUserId) {
+      if (!authUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const appUserId = await getAppUserIdFromSupabaseId(supabaseUserId);
+      const appUserId = await getAppUserIdFromSupabaseId(authUser.id);
       
       if (!appUserId) {
         return res.json({
@@ -114,13 +114,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user-settlements/by-settlement/:settlementId", async (req: Request, res: Response) => {
     try {
       const { settlementId } = req.params;
-      const supabaseUserId = await getUserIdFromToken(req.headers.authorization);
+      const authUser = await getUserFromToken(req.headers.authorization);
       
-      if (!supabaseUserId) {
+      if (!authUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const appUserId = await getAppUserIdFromSupabaseId(supabaseUserId);
+      const appUserId = await getAppUserIdFromSupabaseId(authUser.id);
       
       if (!appUserId) {
         return res.status(404).json({ error: "Not found" });
@@ -152,27 +152,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Local endpoint: Create user settlement (save/track)
   app.post("/api/user-settlements", async (req: Request, res: Response) => {
     try {
-      const supabaseUserId = await getUserIdFromToken(req.headers.authorization);
+      const authUser = await getUserFromToken(req.headers.authorization);
       
-      if (!supabaseUserId) {
+      if (!authUser) {
         console.log("[API] POST /api/user-settlements - No auth token");
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      let appUserId = await getAppUserIdFromSupabaseId(supabaseUserId);
+      let appUserId = await getAppUserIdFromSupabaseId(authUser.id);
       
       // If no app user exists, create one
       if (!appUserId) {
-        console.log("[API] Creating new app user for supabase user:", supabaseUserId);
-        
-        // Get user info from Supabase Auth
-        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(supabaseUserId);
+        console.log("[API] Creating new app user for supabase user:", authUser.id);
         
         const { data: newUser, error: createError } = await supabaseAdmin
           .from("users")
           .insert({
-            email: user?.email || "",
-            supabaseUserId: supabaseUserId,
+            email: authUser.email || "",
+            supabaseUserId: authUser.id,
             isAdmin: false,
             hasCompletedOnboarding: false,
             freeClaimsUsed: 0,
@@ -253,13 +250,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/user-settlements/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const supabaseUserId = await getUserIdFromToken(req.headers.authorization);
+      const authUser = await getUserFromToken(req.headers.authorization);
       
-      if (!supabaseUserId) {
+      if (!authUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const appUserId = await getAppUserIdFromSupabaseId(supabaseUserId);
+      const appUserId = await getAppUserIdFromSupabaseId(authUser.id);
       
       if (!appUserId) {
         return res.status(404).json({ error: "Not found" });
@@ -309,13 +306,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/user-settlements/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const supabaseUserId = await getUserIdFromToken(req.headers.authorization);
+      const authUser = await getUserFromToken(req.headers.authorization);
       
-      if (!supabaseUserId) {
+      if (!authUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const appUserId = await getAppUserIdFromSupabaseId(supabaseUserId);
+      const appUserId = await getAppUserIdFromSupabaseId(authUser.id);
       
       if (!appUserId) {
         return res.status(404).json({ error: "Not found" });
@@ -342,24 +339,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Local endpoint: Get current user
   app.get("/api/auth/user", async (req: Request, res: Response) => {
     try {
-      const supabaseUserId = await getUserIdFromToken(req.headers.authorization);
+      const authUser = await getUserFromToken(req.headers.authorization);
       
-      if (!supabaseUserId) {
+      if (!authUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
       const { data: user, error } = await supabaseAdmin
         .from("users")
         .select("*")
-        .eq("supabaseUserId", supabaseUserId)
+        .eq("supabaseUserId", authUser.id)
         .single();
 
       if (error || !user) {
         // Return minimal user info if app user doesn't exist yet
-        const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(supabaseUserId);
         return res.json({
-          id: supabaseUserId,
-          email: authUser?.email || "",
+          id: authUser.id,
+          email: authUser.email || "",
           firstName: null,
           lastName: null,
           isAdmin: false,
