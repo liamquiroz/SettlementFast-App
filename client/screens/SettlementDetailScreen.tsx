@@ -13,10 +13,11 @@ import { format, parseISO, differenceInDays } from "date-fns";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ClaimActionPanel } from "@/components/ClaimActionPanel";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Shadows, Typography } from "@/constants/theme";
-import { settlementsApi, userSettlementsApi, Settlement, UserSettlement } from "@/lib/api";
+import { settlementsApi, userSettlementsApi, Settlement, UserSettlement, EligibilityQuestion } from "@/lib/api";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type SettlementDetailRouteProp = RouteProp<RootStackParamList, "SettlementDetail">;
@@ -34,6 +35,7 @@ export default function SettlementDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [settlement, setSettlement] = useState<Settlement | null>(null);
   const [userClaim, setUserClaim] = useState<UserSettlement | null>(null);
+  const [questions, setQuestions] = useState<EligibilityQuestion[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
@@ -45,6 +47,13 @@ export default function SettlementDetailScreen() {
     try {
       const data = await settlementsApi.getBySlug(slug);
       setSettlement(data);
+
+      try {
+        const questionsData = await settlementsApi.getQuestions(slug);
+        setQuestions(questionsData);
+      } catch (e) {
+        // No questions available
+      }
 
       if (isAuthenticated) {
         try {
@@ -152,7 +161,7 @@ export default function SettlementDetailScreen() {
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
       >
         <View style={styles.hero}>
           {settlement.logoUrl ? (
@@ -308,44 +317,33 @@ export default function SettlementDetailScreen() {
               </View>
             </View>
           ) : null}
+
+          <View style={{ marginTop: Spacing.xl }}>
+            <ClaimActionPanel
+              settlement={settlement}
+              questions={questions}
+              userSettlement={userClaim}
+              isDeadlinePassed={daysUntilDeadline !== null && daysUntilDeadline < 0}
+              onClaimSaved={(claim) => setUserClaim(claim)}
+            />
+          </View>
+
+          <View style={styles.shareSection}>
+            <Pressable
+              onPress={handleShare}
+              style={({ pressed }) => [
+                styles.shareButton,
+                { backgroundColor: theme.backgroundDefault, opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Feather name="share" size={18} color={theme.textSecondary} />
+              <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: Spacing.sm }}>
+                Share this settlement
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
-
-      <View style={[styles.bottomBar, { backgroundColor: theme.backgroundRoot, paddingBottom: insets.bottom + Spacing.md, borderTopColor: theme.border }]}>
-        <View style={styles.bottomActions}>
-          <Pressable
-            onPress={handleSave}
-            disabled={isSaving || !isAuthenticated}
-            style={({ pressed }) => [
-              styles.iconButton,
-              { backgroundColor: theme.backgroundDefault, opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Feather
-              name={userClaim ? "heart" : "heart"}
-              size={22}
-              color={userClaim ? theme.error : theme.textSecondary}
-              style={{ opacity: userClaim ? 1 : 0.6 }}
-            />
-          </Pressable>
-          <Pressable
-            onPress={handleShare}
-            style={({ pressed }) => [
-              styles.iconButton,
-              { backgroundColor: theme.backgroundDefault, opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Feather name="share" size={22} color={theme.textSecondary} />
-          </Pressable>
-          <Button
-            onPress={handleOpenClaimForm}
-            disabled={!settlement.claimFormUrl}
-            style={styles.claimButton}
-          >
-            File Claim
-          </Button>
-        </View>
-      </View>
     </View>
   );
 }
@@ -478,28 +476,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.xs,
   },
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    borderTopWidth: 1,
+  shareSection: {
+    marginTop: Spacing.xl,
+    alignItems: "center",
   },
-  bottomActions: {
+  shareButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.md,
-  },
-  iconButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  claimButton: {
-    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.full,
   },
 });
