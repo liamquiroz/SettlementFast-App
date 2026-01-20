@@ -643,8 +643,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#e5e7eb",
   },
   outlineButton: {
-    backgroundColor: "#f3f4f6",
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
   },
   modalOverlay: {
     flex: 1,

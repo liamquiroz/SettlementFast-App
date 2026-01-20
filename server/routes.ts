@@ -20,7 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authHeader = req.headers.authorization;
       if (authHeader) {
         headers["Authorization"] = authHeader;
-        console.log(`  Auth header present: Bearer ${authHeader.substring(0, 20)}...`);
+        console.log(`  Auth header present: ${authHeader.substring(0, 27)}...`);
       } else {
         console.log(`  No auth header present`);
       }
