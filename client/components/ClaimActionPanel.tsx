@@ -122,7 +122,7 @@ export function ClaimActionPanel({
     }
   };
 
-  const handleSaveTrack = async () => {
+  const handleSaveTrack = async (): Promise<boolean> => {
     console.log("[ClaimActionPanel] handleSaveTrack called");
     console.log("[ClaimActionPanel] isAuthenticated:", isAuthenticated);
     console.log("[ClaimActionPanel] isTracking:", isTracking);
@@ -134,12 +134,12 @@ export function ClaimActionPanel({
         { text: "Cancel", style: "cancel" },
         { text: "Sign In", onPress: () => navigation.navigate("Login") },
       ]);
-      return;
+      return false;
     }
 
     if (isTracking) {
       console.log("[ClaimActionPanel] Already tracking, returning early");
-      return;
+      return true;
     }
 
     setIsSaving(true);
@@ -159,6 +159,7 @@ export function ClaimActionPanel({
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Saved!", "You're now tracking this settlement claim.");
       onClaimSaved?.(newClaim);
+      return true;
     } catch (error: unknown) {
       console.error("[ClaimActionPanel] Error saving claim:", error);
       const errorMessage =
@@ -174,6 +175,7 @@ export function ClaimActionPanel({
         Alert.alert("Error", `Failed to save claim: ${errorMessage}`);
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -218,8 +220,10 @@ export function ClaimActionPanel({
 
   const handleReminderSave = async () => {
     console.log("[ClaimActionPanel] Reminder modal Save & Track button pressed");
-    await handleSaveTrack();
-    setShowReminderModal(false);
+    const success = await handleSaveTrack();
+    if (success) {
+      setShowReminderModal(false);
+    }
   };
 
   const canVisitWebsite =
