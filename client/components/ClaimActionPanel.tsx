@@ -128,8 +128,6 @@ export function ClaimActionPanel({
     console.log("[ClaimActionPanel] isTracking:", isTracking);
     console.log("[ClaimActionPanel] settlementId:", settlement.id);
 
-    // Debug - temporary alert to confirm function is called
-    Alert.alert("Debug", `Function called. Auth: ${isAuthenticated}, Tracking: ${isTracking}`);
 
     if (!isAuthenticated) {
       Alert.alert("Sign In Required", "Please sign in to track claims.", [
@@ -194,7 +192,7 @@ export function ClaimActionPanel({
 
   const handleViewClaims = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("Main");
+    navigation.navigate("Main", { screen: "ClaimsTab" });
   };
 
   const handleEligibilityAnswer = (questionId: string, answer: string) => {

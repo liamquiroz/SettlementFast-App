@@ -1,7 +1,8 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { NavigatorScreenParams } from "@react-navigation/native";
 
-import MainTabNavigator from "@/navigation/MainTabNavigator";
+import MainTabNavigator, { MainTabParamList } from "@/navigation/MainTabNavigator";
 import SettlementDetailScreen from "@/screens/SettlementDetailScreen";
 import ClaimDetailScreen from "@/screens/ClaimDetailScreen";
 import LoginScreen from "@/screens/LoginScreen";
@@ -12,7 +13,7 @@ import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type RootStackParamList = {
-  Main: undefined;
+  Main: NavigatorScreenParams<MainTabParamList>;
   Login: undefined;
   SettlementDetail: { slug: string };
   ClaimDetail: { claimId: string };
