@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let appUserId = await getAppUserIdFromSupabaseId(authUser.id);
       
-      // If no app user exists, create one
+      // If no app user exists, create one with only essential fields
       if (!appUserId) {
         console.log("[API] Creating new app user for supabase user:", authUser.id);
         
@@ -170,10 +170,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .insert({
             email: authUser.email || "",
             supabaseUserId: authUser.id,
-            isAdmin: false,
-            hasCompletedOnboarding: false,
-            freeClaimsUsed: 0,
-            accountStatus: "active",
           })
           .select()
           .single();
