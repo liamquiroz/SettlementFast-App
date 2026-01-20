@@ -1,0 +1,215 @@
+Mobile App Prompt: Implement ClaimActionPanel with 4-Button Process Logic
+Overview
+Implement a ClaimActionPanel component for the settlement detail screen that replicates the web app's exact 4-button claim process with all associated logic, modals, and state management.
+
+Component: ClaimActionPanel
+Props Interface
+interface ClaimActionPanelProps {
+  settlement: Settlement;
+  questions?: EligibilityQuestion[];
+  userSettlement?: UserSettlement | null;
+  isDeadlinePassed?: boolean;
+}
+The 4 Buttons (in order)
+Button 1: "File Settlement Claim Form" (Green)
+Color: #22c55e (green-500), hover: #16a34a
+Icon: External link icon
+Behavior:
+If user has no claims remaining AND isn't eligible for PAYG → Show Upgrade Modal
+If there are eligibility questions AND user hasn't clicked this button yet → Show Eligibility Questions Modal
+Otherwise → Open the settlement.claimFormUrl in external browser (use Linking.openURL)
+After clicking, set hasClickedFileForm = true
+If not already tracking, start a 10-second reminder interval that shows the Reminder Modal
+Disabled when: isDeadlinePassed === true OR settlement.claimFormUrl is null/empty
+Button 2: "Save & Track Settlement Claim" (Blue)
+Color: #3b82f6 (blue-500), hover: #2563eb
+Color when already tracking: #93c5fd (blue-300, greyed out)
+Icon: Bookmark icon (or Check icon if already tracking)
+Text changes:
+Default: "Save & Track Settlement Claim"
+Loading: "Saving..."
+Already tracking: "You're Tracking This Settlement Claim"
+Behavior:
+Check if user is authenticated → If not, show toast "Please sign in to save your claim"
+Call POST /api/user-settlements with settlementId, eligibilityResult: 'POSSIBLE', eligibilityAnswers, and optional claimConfirmationNumber
+On success: Set isTracking = true, show success toast, invalidate queries, clear reminder interval
+On error with reason === "LIMIT_REACHED": Show Upgrade Modal and show error toast
+Disabled when: isTracking === true OR isDeadlinePassed === true OR mutation is pending
+Button 3: "Visit Settlement Website" (Blue OR Grey)
+Color when enabled: #3b82f6 (blue-500)
+Color when disabled: #9ca3af (grey-400, greyed out with cursor-not-allowed)
+Icon: External link icon
+Behavior: Opens settlement.claimWebsiteUrl in external browser
+Enabled when: hasClickedFileForm === true AND isTracking === true AND settlement.claimWebsiteUrl exists
+Disabled otherwise (greyed out)
+Helper text when disabled after clicking Button 1: Show "Complete 'Save & Track' to unlock the settlement website link"
+Button 4: "View My Settlement Claims" (Outline/Grey)
+Color: #f3f4f6 background, #1f2937 text, #d1d5db border
+Icon: Eye icon
+Behavior: Navigate to /claims screen (or equivalent claims list screen)
+Always enabled
+State Variables
+const [hasClickedFileForm, setHasClickedFileForm] = useState(false);
+const [isTracking, setIsTracking] = useState(!!userSettlement);
+const [showEligibilityModal, setShowEligibilityModal] = useState(false);
+const [showReminderModal, setShowReminderModal] = useState(false);
+const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+const [eligibilityAnswers, setEligibilityAnswers] = useState<Record<string, string>>({});
+const [claimConfirmationNumber, setClaimConfirmationNumber] = useState("");
+Computed State
+const canVisitWebsite = hasClickedFileForm && isTracking;
+Modal 1: Eligibility Questions Modal
+Title: "Eligibility Check"
+Description: "Answer a few questions to check your eligibility for this settlement."
+
+Content:
+
+Progress indicator: "Question X of Y"
+Display questions[currentQuestionIndex].questionText
+Three answer buttons for each question:
+"Yes" → stores 'yes'
+"No" → stores 'no'
+"I'm not sure" → stores 'not_sure'
+Selected answer gets highlighted (different button variant)
+Footer buttons:
+
+"Skip" → Close modal and open claim form directly
+"Next" (or "Continue to Claim Form" on last question) → Advance to next question or close modal and open claim form
+Logic:
+
+const handleEligibilityAnswer = (questionId: string, answer: string) => {
+  setEligibilityAnswers(prev => ({ ...prev, [questionId]: answer }));
+};
+const handleEligibilityNext = () => {
+  if (currentQuestionIndex < questions.length - 1) {
+    setCurrentQuestionIndex(prev => prev + 1);
+  } else {
+    setShowEligibilityModal(false);
+    setCurrentQuestionIndex(0);
+    openClaimForm();
+  }
+};
+Modal 2: Reminder Modal (Popup after 10 seconds)
+Title: "Have you completed the claim form?"
+Description: "We noticed you opened the claim form. Have you completed your submission?"
+
+Content:
+
+Highlighted amber/yellow box with:
+Icon: ClipboardCheck
+Label: "Claim Confirmation Number"
+Helper text: "If you received a confirmation number, paste it below. Check your email if you've already closed the claim page."
+Text input field with placeholder "e.g., CLM-2024-ABC123"
+Footer buttons:
+
+"Remind Me Later" → Just close the modal (reminder interval continues)
+"Save & Track Claim" → Execute save action with confirmation number, close modal, clear interval
+Interval Logic:
+
+const reminderIntervalRef = useRef<NodeJS.Timeout | null>(null);
+const startReminderInterval = useCallback(() => {
+  clearReminderInterval();
+  reminderIntervalRef.current = setInterval(() => {
+    if (!isTracking) {
+      setShowReminderModal(true);
+    } else {
+      clearReminderInterval();
+    }
+  }, 10000); // 10 seconds
+}, [isTracking]);
+// Clean up on unmount
+useEffect(() => {
+  return () => clearReminderInterval();
+}, []);
+Modal 3: Upgrade/Limit Reached Modal
+Title: "Claim Limit Reached"
+Description (varies):
+
+Free tier: "You've used all X claims on your Free plan. Purchase individual claims or upgrade to a paid plan."
+Paid tier: "You've used all X claims for this billing period. Upgrade your plan or wait until your next billing cycle."
+Content:
+
+Progress bar showing claims used (100% full, amber color)
+If free tier + PAYG enabled: Show Pay-As-You-Go option with price per claim and "Add Payment Method" button
+Benefits list: "More claims per month", "Better value than pay-per-claim" (or "Lower overage costs"), "Monthly claim resets"
+Footer buttons:
+
+"Maybe Later" → Close modal
+"View Plans & Pricing" → Navigate to pricing screen
+Usage Progress Bar (Above buttons)
+Show when user has a subscription with limits:
+
+{usage && !usage.isUnlimited && usage.includedClaims && (
+  <UsageProgressBar 
+    planName={usage.planName}
+    claimsUsed={usage.claimsUsed}
+    includedClaims={usage.includedClaims}
+    claimsRemaining={usage.claimsRemaining}
+    periodEnd={usage.periodEnd}
+    isNearLimit={isNearLimit}  // >= 80% used
+    isAtLimit={isAtLimit}      // 100% used
+    isFreeTier={isFreeTier}
+  />
+)}
+Color coding:
+
+Normal: Default colors
+Near limit (80%+): Amber/yellow
+At limit: Red
+Unauthenticated State
+If user is not logged in, show a different card:
+
+Icon: LogIn
+Title: "Sign in to Track This Settlement"
+Description: "Create an account or sign in to save and track your settlement claims."
+Button: "Sign In to Continue" → Navigate to login screen
+API Calls Required
+Save Claim:
+
+POST /api/user-settlements
+Body: {
+  settlementId: string,
+  eligibilityResult: 'POSSIBLE',
+  eligibilityAnswers: Record<string, string>,
+  claimConfirmationNumber?: string
+}
+On success, invalidate these queries:
+
+/api/user-settlements
+/api/user-settlements/by-settlement/${settlementId}
+/api/subscription/usage
+/api/subscription
+/api/payg/stats
+Error Handling
+On save claim error:
+
+if (error?.reason === "LIMIT_REACHED") {
+  setShowUpgradeModal(true);
+  // Show toast: "Claim Limit Reached - You've used all your available claims..."
+} else {
+  // Show toast: "Failed to save claim. Please try again."
+}
+Test IDs for Testing
+button-file-claim-form
+button-save-track-claim
+button-visit-settlement-website
+button-view-my-claims
+button-login-to-track
+input-confirmation-number
+button-remind-me
+button-save-track-modal
+button-skip-eligibility
+button-next-question
+button-answer-yes, button-answer-no, button-answer-not_sure
+button-maybe-later
+button-upgrade-now
+usage-info-bar
+Required Hooks/Context
+The component needs access to:
+
+Auth context - isAuthenticated boolean
+Subscription hook - usage, canSubmitClaim, isAtLimit, isNearLimit, isFreeTier
+PAYG hook - pricePerClaim, hasPaymentMethod, isPaygEnabled
+Toast hook - For showing success/error messages
+React Query - For mutations and cache invalidation
