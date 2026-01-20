@@ -30,8 +30,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           *,
           settlement:settlements(*)
         `)
-        .eq("userId", appUserId)
-        .order("createdAt", { ascending: false });
+        .eq("user_id", appUserId)
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("[API] Error fetching user settlements:", error);
@@ -73,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           *,
           settlement:settlements(payoutMinEstimate, payoutMaxEstimate, claimDeadline)
         `)
-        .eq("userId", appUserId);
+        .eq("user_id", appUserId);
 
       if (error) {
         console.error("[API] Error fetching stats:", error);
@@ -134,8 +134,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           *,
           settlement:settlements(*)
         `)
-        .eq("userId", appUserId)
-        .eq("settlementId", settlementId)
+        .eq("user_id", appUserId)
+        .eq("settlement_id", settlementId)
         .single();
 
       if (error || !data) {
@@ -195,8 +195,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { data: existing } = await supabaseAdmin
         .from("user_settlements")
         .select("id")
-        .eq("userId", appUserId)
-        .eq("settlementId", settlementId)
+        .eq("user_id", appUserId)
+        .eq("settlement_id", settlementId)
         .single();
 
       if (existing) {
@@ -217,10 +217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { data: newUserSettlement, error } = await supabaseAdmin
         .from("user_settlements")
         .insert({
-          userId: appUserId,
-          settlementId,
-          eligibilityResult: eligibilityResult || null,
-          eligibilityAnswers: eligibilityAnswers || null,
+          user_id: appUserId,
+          settlement_id: settlementId,
+          eligibility_result: eligibilityResult || null,
+          eligibility_answers: eligibilityAnswers || null,
           status: "NOT_FILED",
         })
         .select(`
@@ -263,18 +263,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from("user_settlements")
         .select("id")
         .eq("id", id)
-        .eq("userId", appUserId)
+        .eq("user_id", appUserId)
         .single();
 
       if (!existing) {
         return res.status(404).json({ error: "Not found" });
       }
 
-      const updateData = { ...req.body, updatedAt: new Date().toISOString() };
+      const updateData = { ...req.body, updated_at: new Date().toISOString() };
       delete updateData.id;
-      delete updateData.userId;
-      delete updateData.settlementId;
-      delete updateData.createdAt;
+      delete updateData.user_id;
+      delete updateData.settlement_id;
+      delete updateData.created_at;
 
       const { data: updated, error } = await supabaseAdmin
         .from("user_settlements")
@@ -318,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from("user_settlements")
         .delete()
         .eq("id", id)
-        .eq("userId", appUserId);
+        .eq("user_id", appUserId);
 
       if (error) {
         console.error("[API] Error deleting user settlement:", error);
