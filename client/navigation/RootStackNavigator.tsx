@@ -9,6 +9,7 @@ import LoginScreen from "@/screens/LoginScreen";
 import EmailPreferencesScreen from "@/screens/EmailPreferencesScreen";
 import PreferredCategoriesScreen from "@/screens/PreferredCategoriesScreen";
 import PreferredBrandsScreen from "@/screens/PreferredBrandsScreen";
+import ManageSubscriptionScreen from "@/screens/ManageSubscriptionScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   EmailPreferences: undefined;
   PreferredCategories: undefined;
   PreferredBrands: undefined;
+  ManageSubscription: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -85,6 +87,14 @@ export default function RootStackNavigator() {
         component={PreferredBrandsScreen}
         options={{
           headerTitle: "Brands",
+          headerBackTitle: "Back",
+        }}
+      />
+      <Stack.Screen
+        name="ManageSubscription"
+        component={ManageSubscriptionScreen}
+        options={{
+          headerTitle: "Manage Plan",
           headerBackTitle: "Back",
         }}
       />

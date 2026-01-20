@@ -134,6 +134,11 @@ export default function ProfileScreen() {
     navigation.navigate("PreferredBrands");
   };
 
+  const handleManageSubscription = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("ManageSubscription");
+  };
+
   const handleHelpCenter = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await WebBrowser.openBrowserAsync("https://settlementfast.com/help");
@@ -229,6 +234,20 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
       ) : null}
+
+      <View style={styles.section}>
+        <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+          SUBSCRIPTION
+        </ThemedText>
+        <View style={[styles.settingsGroup, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
+          <SettingsItem
+            icon="credit-card"
+            label="Manage Plan"
+            value="View usage & billing"
+            onPress={handleManageSubscription}
+          />
+        </View>
+      </View>
 
       <View style={styles.section}>
         <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
