@@ -226,7 +226,7 @@ export const userSettlementsApi = {
 };
 
 export const dashboardApi = {
-  getStats: () => api.get<DashboardStats>("/api/dashboard/stats"),
+  getStats: () => api.get<DashboardStats>("/api/user-settlements/stats"),
 };
 
 export const userApi = {
