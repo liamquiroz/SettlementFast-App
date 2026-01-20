@@ -34,6 +34,13 @@ Preferred communication style: Simple, everyday language.
 - **Token Storage**: expo-secure-store for native, localStorage for web
 - **Flow**: Tokens automatically refreshed via Supabase client, included in Authorization header for API calls
 
+### User Data Storage (Cross-Platform Consistency)
+- All user data is stored in the shared Supabase database (misxfwpxaukxdklqcxfq)
+- This is the same database used by the desktop app at settlementfast.com
+- User claims/settlements sync seamlessly between mobile and desktop
+- Local API routes on the backend (`/api/user-settlements/*`) communicate directly with Supabase
+- The server uses SUPABASE_SERVICE_ROLE_KEY for backend database operations
+
 ### Project Structure
 ```
 client/           # React Native app code
