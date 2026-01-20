@@ -20,6 +20,8 @@ const AUTH_REQUIRED_ENDPOINTS = [
   "/api/email-preferences",
   "/api/dashboard/stats",
   "/api/auth/user",
+  "/api/subscription",
+  "/api/payg",
 ];
 
 function requiresAuth(endpoint: string): boolean {
@@ -244,4 +246,115 @@ export interface CategoryWithCount {
 export const exploreApi = {
   getBrands: () => api.get<string[]>("/api/explore/brands"),
   getCategories: () => api.get<CategoryWithCount[]>("/api/explore/categories"),
+};
+
+// Subscription & Payment Types
+export interface PlanFeature {
+  text: string;
+  type: "perk" | "limitation";
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  displayName: string;
+  tierType: "individual" | "firm";
+  priceMonthly: string | null;
+  stripePriceId: string | null;
+  includedClaims: number | null;
+  isUnlimited: boolean;
+  overagePrice: string | null;
+  features: PlanFeature[];
+  highlightColor: string | null;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  planId: string;
+  stripeSubscriptionId: string | null;
+  stripeCustomerId: string | null;
+  status: "active" | "canceled" | "past_due" | "incomplete";
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  createdAt: string;
+  updatedAt: string;
+  plan: SubscriptionPlan;
+}
+
+export interface SubscriptionUsage {
+  planName: string;
+  includedClaims: number | null;
+  claimsUsed: number;
+  claimsRemaining: number | null;
+  overageClaims: number;
+  isUnlimited: boolean;
+  periodStart: string | null;
+  periodEnd: string | null;
+}
+
+export interface PaymentMethod {
+  id: string;
+  userId: string;
+  stripePaymentMethodId: string;
+  stripeCustomerId: string;
+  cardBrand: string | null;
+  cardLast4: string | null;
+  cardExpMonth: number | null;
+  cardExpYear: number | null;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface PaygSettings {
+  isEnabled: boolean;
+  pricePerClaim: string;
+  freeClaimsPerUser: number;
+}
+
+export interface PaygStats {
+  totalPurchases: number;
+  totalSpent: number;
+  claimsPurchased: number;
+  claimsUsed: number;
+  claimsTotal: number;
+  claimsRemaining: number;
+  pricePerClaim: string;
+}
+
+export interface CanSubmitResponse {
+  canSubmit: boolean;
+  reason?: string;
+  claimsRemaining?: number;
+}
+
+export const subscriptionApi = {
+  getPlans: (tierType?: "individual" | "firm") => 
+    api.get<SubscriptionPlan[]>(`/api/subscription-plans${tierType ? `?tierType=${tierType}` : ""}`),
+  getCurrent: () => api.get<Subscription>("/api/subscription"),
+  getUsage: () => api.get<SubscriptionUsage>("/api/subscription/usage"),
+  createCheckout: (planId: string) => 
+    api.post<{ url: string }>("/api/subscription/checkout", { planId }),
+  createPortal: () => api.post<{ url: string }>("/api/subscription/portal"),
+  cancel: () => api.post<{ message: string }>("/api/subscription/cancel"),
+  reactivate: () => api.post<{ message: string }>("/api/subscription/reactivate"),
+  billingPortal: () => api.post<{ url: string }>("/api/subscription/billing-portal"),
+};
+
+export const paygApi = {
+  getSettings: () => api.get<PaygSettings>("/api/payg/settings"),
+  getStats: () => api.get<PaygStats>("/api/payg/stats"),
+  getPaymentMethods: () => api.get<PaymentMethod[]>("/api/payg/payment-methods"),
+  createSetupIntent: () => api.post<{ clientSecret: string; customerId: string }>("/api/payg/setup-intent"),
+  savePaymentMethod: (paymentMethodId: string, stripeCustomerId: string) =>
+    api.post<PaymentMethod>("/api/payg/payment-methods", { paymentMethodId, stripeCustomerId }),
+  deletePaymentMethod: (id: string) => api.delete(`/api/payg/payment-methods/${id}`),
+  setDefaultPaymentMethod: (id: string) => 
+    api.post<{ success: boolean }>(`/api/payg/payment-methods/${id}/default`),
+  purchase: (userSettlementId?: string, paymentMethodId?: string) =>
+    api.post<{ success: boolean; usedPlanClaim?: boolean; claimsRemaining?: number; message?: string; requiresPaymentSetup?: boolean }>("/api/payg/purchase", { userSettlementId, paymentMethodId }),
+  canSubmit: () => api.get<CanSubmitResponse>("/api/payg/can-submit"),
 };

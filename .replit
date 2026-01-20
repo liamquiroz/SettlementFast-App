@@ -78,3 +78,4 @@ ensurePreviewReachable = "/status"
 [userenv.shared]
 EXPO_PUBLIC_SUPABASE_URL = "https://misxfwpxaukxdklqcxfq.supabase.co"
 EXPO_PUBLIC_API_URL = "https://settlementfast.com"
+EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_51SYYQGBYft30iHJKWpdEnAsiu5ebYRgy50HYrrYQ5NAi7GJAYdMzCDHwlS2BgtYizT7QBkEaXDK5diXnOeI5t9s800EQ7WG5eR"
