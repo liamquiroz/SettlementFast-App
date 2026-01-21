@@ -30,6 +30,35 @@ function requiresAuth(endpoint: string): boolean {
   );
 }
 
+// Cache the last known valid session token to use as fallback
+let cachedAccessToken: string | null = null;
+
+// Helper to get session with timeout to prevent hanging
+async function getSessionWithTimeout(timeoutMs: number = 3000): Promise<string | null> {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      console.log(`[API] getSession timed out after ${timeoutMs}ms, using cached token`);
+      resolve(cachedAccessToken);
+    }, timeoutMs);
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout);
+        if (session?.access_token) {
+          cachedAccessToken = session.access_token;
+          resolve(session.access_token);
+        } else {
+          resolve(cachedAccessToken);
+        }
+      })
+      .catch((error) => {
+        clearTimeout(timeout);
+        console.error("[API] getSession error:", error);
+        resolve(cachedAccessToken);
+      });
+  });
+}
+
 async function getAuthHeaders(endpoint: string): Promise<Record<string, string>> {
   // Only add auth headers for endpoints that require authentication
   if (!requiresAuth(endpoint)) {
@@ -40,12 +69,12 @@ async function getAuthHeaders(endpoint: string): Promise<Record<string, string>>
   }
 
   console.log(`[API] Endpoint ${endpoint} requires auth, getting session...`);
-  const { data: { session } } = await supabase.auth.getSession();
-  console.log(`[API] Session exists: ${!!session}, has token: ${!!session?.access_token}`);
+  const accessToken = await getSessionWithTimeout(3000);
+  console.log(`[API] Session token exists: ${!!accessToken}`);
   
-  if (session?.access_token) {
+  if (accessToken) {
     return {
-      "Authorization": `Bearer ${session.access_token}`,
+      "Authorization": `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     };
   }
