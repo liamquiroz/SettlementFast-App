@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { StyleSheet, View, FlatList, RefreshControl, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -30,7 +30,7 @@ export default function BrowseScreen() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [allSettlements, setAllSettlements] = useState<Settlement[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [categories, setCategories] = useState<string[]>(CATEGORIES);
@@ -39,7 +39,6 @@ export default function BrowseScreen() {
     try {
       const apiCategories = await exploreApi.getCategories();
       if (apiCategories.length > 0) {
-        // API returns {name, count} objects, extract just the names
         const categoryNames = apiCategories.map((cat: { name: string; count: number } | string) => 
           typeof cat === 'string' ? cat : cat.name
         );
@@ -52,30 +51,44 @@ export default function BrowseScreen() {
 
   const loadSettlements = useCallback(async () => {
     try {
-      const params: { search?: string; category?: string } = {};
-      if (searchQuery.trim()) params.search = searchQuery.trim();
-      if (selectedCategory !== "All") params.category = selectedCategory;
-
-      const data = await settlementsApi.list(params);
-      setSettlements(data);
+      const data = await settlementsApi.list();
+      setAllSettlements(data);
     } catch (error) {
       console.error("Failed to load settlements:", error);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [searchQuery, selectedCategory]);
+  }, []);
+
+  const filteredSettlements = useMemo(() => {
+    let results = allSettlements;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      results = results.filter((settlement) => {
+        const titleMatch = settlement.title?.toLowerCase().includes(query);
+        const descMatch = settlement.shortDescription?.toLowerCase().includes(query);
+        const brandsMatch = settlement.brands?.some((brand) =>
+          brand.toLowerCase().includes(query)
+        );
+        const categoryMatch = settlement.category?.toLowerCase().includes(query);
+        return titleMatch || descMatch || brandsMatch || categoryMatch;
+      });
+    }
+
+    if (selectedCategory !== "All") {
+      results = results.filter(
+        (settlement) => settlement.category === selectedCategory
+      );
+    }
+
+    return results;
+  }, [allSettlements, searchQuery, selectedCategory]);
 
   useEffect(() => {
     loadCategories();
-  }, []);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      loadSettlements();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
+    loadSettlements();
   }, [loadSettlements]);
 
   const handleRefresh = () => {
@@ -145,7 +158,7 @@ export default function BrowseScreen() {
         flexGrow: 1,
       }}
       scrollIndicatorInsets={{ bottom: insets.bottom }}
-      data={settlements}
+      data={filteredSettlements}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <SettlementCard
