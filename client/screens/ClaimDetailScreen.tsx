@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, TextInput, Pressable, Alert } from "react-native";
+import { StyleSheet, View, TextInput, Pressable, Alert, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
@@ -37,6 +37,8 @@ export default function ClaimDetailScreen() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [claim, setClaim] = useState<UserSettlement | null>(null);
   const [confirmationNumber, setConfirmationNumber] = useState("");
   const [notes, setNotes] = useState("");
@@ -90,30 +92,28 @@ export default function ClaimDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      "Delete Claim",
-      "Are you sure you want to remove this claim from your list?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            if (!claim) return;
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            try {
-              await userSettlementsApi.delete(claim.id);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              navigation.goBack();
-            } catch (error) {
-              console.error("Failed to delete:", error);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert("Error", "Failed to remove claim. Please try again.");
-            }
-          },
-        },
-      ]
-    );
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!claim) return;
+    setIsDeleting(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    try {
+      console.log("[ClaimDetail] Deleting claim:", claim.id);
+      await userSettlementsApi.delete(claim.id);
+      console.log("[ClaimDetail] Claim deleted successfully");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowDeleteModal(false);
+      navigation.goBack();
+    } catch (error) {
+      console.error("[ClaimDetail] Failed to delete:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setShowDeleteModal(false);
+      Alert.alert("Error", "Failed to remove claim. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (isLoading) {
@@ -287,6 +287,52 @@ export default function ClaimDetailScreen() {
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </View>
+
+      <Modal
+        visible={showDeleteModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundRoot }]}>
+            <View style={styles.modalHeader}>
+              <Feather name="alert-triangle" size={32} color={theme.error} />
+              <ThemedText type="h3" style={{ marginTop: Spacing.md, textAlign: "center" }}>
+                Remove Claim?
+              </ThemedText>
+            </View>
+            <ThemedText
+              type="body"
+              style={{ color: theme.textSecondary, textAlign: "center", marginBottom: Spacing.xl }}
+            >
+              Are you sure you want to remove this claim from your list? This action cannot be undone.
+            </ThemedText>
+            <View style={styles.modalButtons}>
+              <Pressable
+                testID="button-cancel-delete"
+                onPress={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                style={[styles.modalButton, { backgroundColor: theme.backgroundDefault }]}
+              >
+                <ThemedText type="body" style={{ fontWeight: "600" }}>
+                  Cancel
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                testID="button-confirm-delete"
+                onPress={confirmDelete}
+                disabled={isDeleting}
+                style={[styles.modalButton, { backgroundColor: theme.error, flex: 1 }]}
+              >
+                <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                  {isDeleting ? "Removing..." : "Remove"}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -396,5 +442,33 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     width: "100%",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 340,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+  },
+  modalHeader: {
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  modalButton: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
