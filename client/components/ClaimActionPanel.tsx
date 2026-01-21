@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
   Pressable,
   Modal,
-  TextInput,
   Alert,
   Linking,
 } from "react-native";
@@ -51,44 +50,14 @@ export function ClaimActionPanel({
   const [isTracking, setIsTracking] = useState(!!userSettlement);
   const [isSaving, setIsSaving] = useState(false);
   const [showEligibilityModal, setShowEligibilityModal] = useState(false);
-  const [showReminderModal, setShowReminderModal] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [eligibilityAnswers, setEligibilityAnswers] = useState<
     Record<string, string>
   >({});
-  const [claimConfirmationNumber, setClaimConfirmationNumber] = useState("");
-
-  const reminderIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsTracking(!!userSettlement);
   }, [userSettlement]);
-
-  useEffect(() => {
-    return () => {
-      if (reminderIntervalRef.current) {
-        clearInterval(reminderIntervalRef.current);
-      }
-    };
-  }, []);
-
-  const clearReminderInterval = useCallback(() => {
-    if (reminderIntervalRef.current) {
-      clearInterval(reminderIntervalRef.current);
-      reminderIntervalRef.current = null;
-    }
-  }, []);
-
-  const startReminderInterval = useCallback(() => {
-    clearReminderInterval();
-    reminderIntervalRef.current = setInterval(() => {
-      if (!isTracking) {
-        setShowReminderModal(true);
-      } else {
-        clearReminderInterval();
-      }
-    }, 10000);
-  }, [isTracking, clearReminderInterval]);
 
   const openClaimForm = async () => {
     if (!settlement.claimFormUrl) return;
@@ -96,9 +65,6 @@ export function ClaimActionPanel({
     try {
       await WebBrowser.openBrowserAsync(settlement.claimFormUrl);
       setHasClickedFileForm(true);
-      if (!isTracking) {
-        startReminderInterval();
-      }
     } catch (error) {
       console.error("Failed to open claim form:", error);
     }
@@ -155,7 +121,6 @@ export function ClaimActionPanel({
       console.log("[ClaimActionPanel] Claim created successfully:", newClaim);
 
       setIsTracking(true);
-      clearReminderInterval();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Saved!", "You're now tracking this settlement claim.");
       onClaimSaved?.(newClaim);
@@ -216,12 +181,6 @@ export function ClaimActionPanel({
     setShowEligibilityModal(false);
     setCurrentQuestionIndex(0);
     openClaimForm();
-  };
-
-  const handleReminderSave = () => {
-    console.log("[ClaimActionPanel] Reminder modal Save & Track button pressed");
-    setShowReminderModal(false);
-    handleSaveTrack();
   };
 
   const canVisitWebsite =
@@ -497,98 +456,6 @@ export function ClaimActionPanel({
                   {currentQuestionIndex === questions.length - 1
                     ? "Continue to Claim Form"
                     : "Next"}
-                </ThemedText>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showReminderModal}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setShowReminderModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: theme.backgroundRoot },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <ThemedText type="h3">Have you completed the claim form?</ThemedText>
-            </View>
-
-            <ThemedText
-              type="body"
-              style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}
-            >
-              We noticed you opened the claim form. Have you completed your
-              submission?
-            </ThemedText>
-
-            <View
-              style={[
-                styles.confirmationBox,
-                { backgroundColor: `${theme.warning}15`, borderColor: theme.warning },
-              ]}
-            >
-              <View style={styles.confirmationHeader}>
-                <Feather name="clipboard" size={20} color={theme.warning} />
-                <ThemedText
-                  type="body"
-                  style={{ fontWeight: "600", marginLeft: Spacing.sm }}
-                >
-                  Claim Confirmation Number
-                </ThemedText>
-              </View>
-              <ThemedText
-                type="small"
-                style={{ color: theme.textSecondary, marginTop: Spacing.xs }}
-              >
-                If you received a confirmation number, paste it below. Check
-                your email if you've already closed the claim page.
-              </ThemedText>
-              <TextInput
-                testID="input-confirmation-number"
-                style={[
-                  styles.confirmationInput,
-                  {
-                    backgroundColor: theme.backgroundRoot,
-                    borderColor: theme.border,
-                    color: theme.text,
-                  },
-                ]}
-                placeholder="e.g., CLM-2024-ABC123"
-                placeholderTextColor={theme.textTertiary}
-                value={claimConfirmationNumber}
-                onChangeText={setClaimConfirmationNumber}
-                autoCapitalize="characters"
-              />
-            </View>
-
-            <View style={styles.modalFooter}>
-              <Pressable
-                testID="button-remind-me"
-                onPress={() => setShowReminderModal(false)}
-                style={[styles.modalButton, { backgroundColor: theme.backgroundDefault }]}
-              >
-                <ThemedText type="body" style={{ fontWeight: "600" }}>
-                  Remind Me Later
-                </ThemedText>
-              </Pressable>
-              <Pressable
-                testID="button-save-track-modal"
-                onPress={handleReminderSave}
-                style={[styles.modalButton, { backgroundColor: theme.primary, flex: 1 }]}
-              >
-                <ThemedText
-                  type="body"
-                  style={{ color: "#FFFFFF", fontWeight: "600" }}
-                >
-                  Save & Track Claim
                 </ThemedText>
               </Pressable>
             </View>
