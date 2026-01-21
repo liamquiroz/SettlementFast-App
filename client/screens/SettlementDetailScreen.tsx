@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, Share, Linking, Image } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, Share, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from "expo-web-browser";
 import { format, parseISO, differenceInDays } from "date-fns";
@@ -14,6 +13,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ClaimActionPanel } from "@/components/ClaimActionPanel";
+import { LogoContainer } from "@/components/LogoContainer";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Shadows, Typography } from "@/constants/theme";
@@ -163,25 +163,10 @@ export default function SettlementDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
       >
-        <View style={styles.hero}>
-          {settlement.logoUrl ? (
-            <Image
-              source={{ uri: settlement.logoUrl }}
-              style={styles.heroImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={[styles.heroPlaceholder, { backgroundColor: theme.primary }]}>
-              <Feather name="file-text" size={60} color="rgba(255,255,255,0.3)" />
-            </View>
-          )}
-          <LinearGradient
-            colors={["transparent", theme.backgroundRoot]}
-            style={styles.heroGradient}
-          />
-        </View>
-
-        <View style={[styles.content, { marginTop: -60 }]}>
+        <View style={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}>
+          <View style={styles.logoRow}>
+            <LogoContainer logoUrl={settlement.logoUrl} size="large" />
+          </View>
           <View style={styles.badges}>
             <View style={[styles.badge, { backgroundColor: `${theme.primary}15` }]}>
               <ThemedText type="small" style={{ color: theme.primary, fontWeight: "600" }}>
@@ -365,26 +350,8 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  hero: {
-    height: 200,
-    position: "relative",
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  heroPlaceholder: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
+  logoRow: {
+    marginBottom: Spacing.lg,
   },
   content: {
     paddingHorizontal: Spacing.lg,

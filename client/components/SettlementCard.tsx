@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, Pressable, Image } from "react-native";
+import { StyleSheet, View, Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,6 +9,7 @@ import { Feather } from "@expo/vector-icons";
 import { format, differenceInDays, parseISO } from "date-fns";
 
 import { ThemedText } from "@/components/ThemedText";
+import { LogoContainer } from "@/components/LogoContainer";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { Settlement } from "@/lib/api";
@@ -71,17 +72,7 @@ export function SettlementCard({ settlement, onPress }: SettlementCardProps) {
       ]}
     >
       <View style={styles.header}>
-        {settlement.logoUrl ? (
-          <Image
-            source={{ uri: settlement.logoUrl }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        ) : (
-          <View style={[styles.logoPlaceholder, { backgroundColor: theme.primary }]}>
-            <Feather name="file-text" size={20} color="#FFFFFF" />
-          </View>
-        )}
+        <LogoContainer logoUrl={settlement.logoUrl} size="medium" />
         <View style={styles.headerText}>
           <ThemedText type="h4" numberOfLines={2} style={styles.title}>
             {settlement.title}
@@ -166,18 +157,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     marginBottom: Spacing.md,
-  },
-  logo: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.sm,
-  },
-  logoPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
   },
   headerText: {
     flex: 1,
