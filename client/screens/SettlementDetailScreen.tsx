@@ -138,6 +138,8 @@ export default function SettlementDetailScreen() {
     ? differenceInDays(parseISO(settlement.claimDeadline), new Date())
     : null;
 
+  const isDeadlinePassed = daysUntilDeadline !== null && daysUntilDeadline < 0;
+
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
@@ -173,9 +175,9 @@ export default function SettlementDetailScreen() {
                 {settlement.category}
               </ThemedText>
             </View>
-            <View style={[styles.badge, { backgroundColor: `${theme.success}15` }]}>
-              <ThemedText type="small" style={{ color: theme.success, fontWeight: "600" }}>
-                {settlement.status}
+            <View style={[styles.badge, { backgroundColor: isDeadlinePassed ? `${theme.textTertiary}15` : `${theme.success}15` }]}>
+              <ThemedText type="small" style={{ color: isDeadlinePassed ? theme.textTertiary : theme.success, fontWeight: "600" }}>
+                {isDeadlinePassed ? "CLOSED" : settlement.status}
               </ThemedText>
             </View>
             {settlement.proofRequired ? (

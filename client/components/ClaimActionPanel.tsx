@@ -263,24 +263,28 @@ export function ClaimActionPanel({
         testID="button-save-track-claim"
         onPress={() => {
           console.log("[ClaimActionPanel] Save & Track button pressed");
-          console.log("[ClaimActionPanel] Button disabled states:", { isTracking, isSaving });
+          console.log("[ClaimActionPanel] Button disabled states:", { isTracking, isSaving, isDeadlinePassed });
           handleSaveTrack();
         }}
-        disabled={isTracking || isSaving}
+        disabled={isTracking || isSaving || isDeadlinePassed}
         style={({ pressed }) => [
           styles.button,
-          isTracking ? styles.blueButtonDisabled : styles.blueButton,
+          isDeadlinePassed
+            ? styles.disabledButton
+            : isTracking
+              ? styles.blueButtonDisabled
+              : styles.blueButton,
           {
-            opacity: pressed || isTracking ? 0.7 : 1,
+            opacity: pressed || isTracking || isDeadlinePassed ? 0.7 : 1,
           },
         ]}
       >
         <Feather
           name={isTracking ? "check" : "bookmark"}
           size={18}
-          color="#FFFFFF"
+          color={isDeadlinePassed ? "#6b7280" : "#FFFFFF"}
         />
-        <ThemedText type="body" style={styles.buttonText}>
+        <ThemedText type="body" style={[styles.buttonText, isDeadlinePassed && { color: "#374151" }]}>
           {isSaving
             ? "Saving..."
             : isTracking
@@ -292,23 +296,23 @@ export function ClaimActionPanel({
       <Pressable
         testID="button-visit-settlement-website"
         onPress={handleVisitWebsite}
-        disabled={!canVisitWebsite}
+        disabled={!canVisitWebsite || isDeadlinePassed}
         style={({ pressed }) => [
           styles.button,
-          canVisitWebsite ? styles.blueButton : styles.disabledButton,
+          canVisitWebsite && !isDeadlinePassed ? styles.blueButton : styles.disabledButton,
           { opacity: pressed ? 0.7 : 1 },
         ]}
       >
         <Feather
           name="external-link"
           size={18}
-          color={canVisitWebsite ? "#FFFFFF" : "#6b7280"}
+          color={canVisitWebsite && !isDeadlinePassed ? "#FFFFFF" : "#6b7280"}
         />
         <ThemedText
           type="body"
           style={[
             styles.buttonText,
-            { color: canVisitWebsite ? "#FFFFFF" : "#374151" },
+            { color: canVisitWebsite && !isDeadlinePassed ? "#FFFFFF" : "#374151" },
           ]}
         >
           Visit Settlement Website
