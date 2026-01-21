@@ -41,7 +41,8 @@ export function SettlementCard({ settlement, onPress }: SettlementCardProps) {
     ? differenceInDays(parseISO(settlement.claimDeadline), new Date())
     : null;
 
-  const isUrgent = daysUntilDeadline !== null && daysUntilDeadline <= 7;
+  const isDeadlinePassed = daysUntilDeadline !== null && daysUntilDeadline < 0;
+  const isUrgent = daysUntilDeadline !== null && daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
 
   const formatPayout = () => {
     if (settlement.payoutMinEstimate && settlement.payoutMaxEstimate) {
@@ -128,16 +129,21 @@ export function SettlementCard({ settlement, onPress }: SettlementCardProps) {
               {isUrgent ? (
                 <Feather name="alert-circle" size={14} color={theme.error} />
               ) : null}
+              {isDeadlinePassed ? (
+                <Feather name="x-circle" size={14} color={theme.textTertiary} />
+              ) : null}
               <ThemedText
                 type="small"
                 style={[
                   styles.deadlineText,
-                  { color: isUrgent ? theme.error : theme.text },
+                  { color: isDeadlinePassed ? theme.textTertiary : isUrgent ? theme.error : theme.text },
                 ]}
               >
-                {daysUntilDeadline !== null && daysUntilDeadline >= 0
-                  ? `${daysUntilDeadline} days`
-                  : format(parseISO(settlement.claimDeadline), "MMM d, yyyy")}
+                {isDeadlinePassed
+                  ? "Passed"
+                  : daysUntilDeadline !== null && daysUntilDeadline >= 0
+                    ? `${daysUntilDeadline} days`
+                    : format(parseISO(settlement.claimDeadline), "MMM d, yyyy")}
               </ThemedText>
             </View>
           </View>
