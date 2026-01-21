@@ -244,7 +244,9 @@ export function ClaimActionPanel({
         disabled={isDeadlinePassed || !settlement.claimFormUrl}
         style={({ pressed }) => [
           styles.button,
-          styles.greenButton,
+          isDeadlinePassed || !settlement.claimFormUrl
+            ? styles.disabledButton
+            : styles.greenButton,
           {
             opacity:
               pressed || isDeadlinePassed || !settlement.claimFormUrl
@@ -253,8 +255,18 @@ export function ClaimActionPanel({
           },
         ]}
       >
-        <Feather name="external-link" size={18} color="#FFFFFF" />
-        <ThemedText type="body" style={styles.buttonText}>
+        <Feather
+          name="external-link"
+          size={18}
+          color={isDeadlinePassed || !settlement.claimFormUrl ? "#6b7280" : "#FFFFFF"}
+        />
+        <ThemedText
+          type="body"
+          style={[
+            styles.buttonText,
+            (isDeadlinePassed || !settlement.claimFormUrl) && { color: "#374151" },
+          ]}
+        >
           File Settlement Claim Form
         </ThemedText>
       </Pressable>
