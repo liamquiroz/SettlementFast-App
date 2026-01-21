@@ -218,12 +218,10 @@ export function ClaimActionPanel({
     openClaimForm();
   };
 
-  const handleReminderSave = async () => {
+  const handleReminderSave = () => {
     console.log("[ClaimActionPanel] Reminder modal Save & Track button pressed");
-    const success = await handleSaveTrack();
-    if (success) {
-      setShowReminderModal(false);
-    }
+    setShowReminderModal(false);
+    handleSaveTrack();
   };
 
   const canVisitWebsite =
@@ -521,9 +519,6 @@ export function ClaimActionPanel({
           >
             <View style={styles.modalHeader}>
               <ThemedText type="h3">Have you completed the claim form?</ThemedText>
-              <Pressable onPress={() => setShowReminderModal(false)}>
-                <Feather name="x" size={24} color={theme.textSecondary} />
-              </Pressable>
             </View>
 
             <ThemedText

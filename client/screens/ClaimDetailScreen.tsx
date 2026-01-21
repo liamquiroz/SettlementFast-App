@@ -103,9 +103,12 @@ export default function ClaimDetailScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
             try {
               await userSettlementsApi.delete(claim.id);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               navigation.goBack();
             } catch (error) {
               console.error("Failed to delete:", error);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Error", "Failed to remove claim. Please try again.");
             }
           },
         },
